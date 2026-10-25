@@ -1,0 +1,3 @@
+[submodule "aventura-web"]
+	path = aventura-web
+	url = https://github.com/AlejandroVecchio/eromash-aventura-web.git

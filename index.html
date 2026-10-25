@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- todo lo relativo (estilos, imágenes, mapas, «Probar en el juego») apunta al juego, que está enganchado como submódulo -->
+<base href="aventura-web/aventura/" />
+<title>Eromash · Editor de Eldervald</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%239C2315'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/aventura.css" />
+<style>
+  /* el mapa a la izquierda, el panel de objetos y herramientas a la derecha */
+  /* arriba la barra de menús (fija); todo lo demás se ubica debajo (body es el marco de lo absoluto) */
+  html { height: 100%; background: #111111; }
+  body { position: relative; margin-top: 34px !important; height: calc(100% - 34px) !important; }
+  html, body { margin: 0; height: 100%; background: #111111; color: #F2ECEC; font-family: "Eromash Text", system-ui, sans-serif; overflow: hidden; }
+  .ed { display: grid; grid-template-columns: minmax(0, 1fr) 340px; height: 100%; }
+  #mapa { width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; background: #1E2C1B; }
+  aside { background: #1C1714; border-left: 1px solid #3A2A26; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
+  aside header { padding: 16px 16px 8px; }
+  aside h1 { font-family: "Eromash Display", system-ui, sans-serif; font-size: 20px; margin: 0 0 4px; color: #FFD98A; }
+  aside .sub { margin: 0; font-size: 13px; color: #E0B2B2; line-height: 1.4; }
+  #planoBar { padding: 0 16px 6px; display: flex; flex-direction: column; gap: 6px; }
+  #planoNombre { font: inherit; font-family: "Eromash Display", system-ui, sans-serif; font-size: 17px; color: #FFD98A; background: #111111; border: 1px solid #4A3630; padding: 6px 8px; }
+  #planoNombre:hover { border-color: #9C2315; }
+  #planoNombre::placeholder { color: #8A7470; }
+  #planoBar .botones3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  #planoBar button { padding: 5px 6px; font-size: 12px; }
+  .herr { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px 16px; }
+  button { font: inherit; font-size: 13px; color: #F2ECEC; background: #2A1E1A; border: 1px solid #4A3630; padding: 8px 10px; cursor: pointer; }
+  button:hover { border-color: #9C2315; }
+  button.activo { background: #9C2315; border-color: #C8402D; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #FFD98A; outline-offset: 1px; }
+  .fila { display: flex; gap: 8px; align-items: center; padding: 4px 16px; font-size: 13px; }
+  .fila label { display: flex; align-items: center; gap: 6px; }
+  .fila input[type=range] { flex: 1; }
+  input[type=search], select, input[type=number] { font: inherit; font-size: 14px; background: #111111; color: #F2ECEC; border: 1px solid #4A3630; padding: 7px 8px; }
+  input[type=search], select { width: 100%; box-sizing: border-box; }
+  input[type=number] { width: 64px; }
+  #lista { flex: 1 0 280px; min-height: 280px; overflow: auto; padding: 6px 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; align-content: start; }
+  .obj { background: #241A17; border: 1px solid #3A2A26; padding: 4px; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+  .obj canvas { width: 100%; height: 70px; display: block; background: #3B3222; }
+  .obj span { font-size: 12px; line-height: 1.2; color: #E0B2B2; }
+  .obj.elegido { border-color: #FFD98A; }
+  .grupo { grid-column: 1 / -1; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #FFD98A; margin: 8px 0 0; }
+  #pestanasLado { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid #3A2A26; position: sticky; top: 0; z-index: 2; background: #1C1714; }
+  #pestanasLado button { border: 0; border-bottom: 2px solid transparent; background: none; padding: 10px 8px; font-size: 13px; color: #B5A5A0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #pestanasLado button.activa { color: #FFD98A; border-bottom-color: #FFD98A; }
+  #pestanasLado small { color: #73D5DB; font-size: 11px; }
+  /* cada pestaña se desplaza sola; el pie (probar y descargar) queda siempre a la vista */
+  .ed > aside { overflow: hidden; }
+  #ladoObjetos { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-top: 8px; }
+  #ladoObjetos #lista { flex: none; min-height: 0; overflow: visible; }
+  #ladoCapas { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-bottom: 8px; }
+  footer #cuenta, footer #donde, footer #guardadoV { font-size: 11.5px; line-height: 1.3; }
+  .cpCab { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px 4px; }
+  .cpCab b { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #FFD98A; }
+  .cpCab button { padding: 4px 10px; font-size: 12px; }
+  .cpAyuda { display: block; padding: 2px 16px 6px; color: #B5A5A0; font-size: 12px; line-height: 1.35; }
+  .cpFila { display: grid; grid-template-columns: 30px 30px minmax(0, 1fr) auto auto; align-items: center; gap: 2px; padding: 2px 10px 2px 8px; border-left: 2px solid transparent; font-size: 13px; }
+  .cpFila.activa { background: #3A1510; border-left-color: #FFD98A; }
+  .cpFila.conElegido .cpNom::after { content: " ◆"; color: #FFD98A; font-size: 10px; }
+  .cpFila button { background: none; border: 0; padding: 4px; color: #B5A5A0; min-width: 28px; }
+  .cpFila button:hover { color: #FFD98A; }
+  .cpFila .apagado { opacity: .35; }
+  .cpFila .on { color: #FFD98A; }
+  .cpFila .cpNom { text-align: left; color: #F2ECEC; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 6px 4px; }
+  .cpFila.oculta .cpNom { opacity: .45; }
+  .cpFila .cpN { color: #B5A5A0; font-size: 11px; font-variant-numeric: tabular-nums; padding: 0 4px; }
+  .cpFila input { font: inherit; font-size: 13px; background: #111111; color: #F2ECEC; border: 1px solid #FFD98A; padding: 4px 6px; min-width: 0; }
+  .cpAcciones { display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 10px 8px 70px; }
+  .cpAcciones button { font-size: 11.5px; padding: 4px 7px; }
+  /* la barra de menús */
+  #menubar { position: fixed; top: 0; left: 0; right: 0; height: 34px; z-index: 40; display: flex; align-items: stretch; gap: 1px; background: #1C1714; border-bottom: 1px solid #3A2A26; padding: 0 6px; overflow-x: auto; scrollbar-width: none; box-sizing: border-box; }
+  #menubar .marca { font-family: "Eromash Display", system-ui, sans-serif; color: #FFD98A; padding: 0 12px 0 6px; white-space: nowrap; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  #menubar .marca i { width: 9px; height: 9px; background: #C8402D; transform: rotate(45deg); display: inline-block; }
+  #menubar > button.m { padding: 0 11px; white-space: nowrap; border: 0; border-bottom: 2px solid transparent; background: none; font-size: 13px; }
+  #menubar > button.m.abierto { background: #241A17; border-bottom-color: #FFD98A; color: #FFD98A; }
+  #menubar .der { margin-left: auto; display: flex; align-items: center; gap: 8px; color: #B5A5A0; font-size: 12px; white-space: nowrap; padding-right: 6px; }
+  .desp { position: fixed; z-index: 45; min-width: 260px; max-height: calc(100vh - 50px); overflow: auto; background: #1C1714; border: 1px solid #FFD98A; padding: 4px 0; box-shadow: 0 10px 30px rgba(0,0,0,.55); }
+  .desp .it { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: center; width: 100%; text-align: left; padding: 6px 14px 6px 10px; font-size: 13px; border: 0; background: none; }
+  .desp .it.activo, .desp .it:hover { background: #9C2315; }
+  .desp .it[disabled] { opacity: .4; cursor: default; background: none; }
+  .desp .it kbd { font: inherit; font-size: 11.5px; color: #B5A5A0; }
+  .desp .it .ico { color: #FFD98A; font-size: 11px; text-align: center; }
+  .desp .it.sub kbd::after { content: " ›"; }
+  .desp .sep { height: 1px; background: #3A2A26; margin: 4px 0; }
+  .desp .tit { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #B5A5A0; padding: 6px 14px 2px 36px; }
+  footer { border-top: 1px solid #3A2A26; padding: 10px 16px 14px; display: flex; flex-direction: column; gap: 6px; }
+  footer .botones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  footer .botones button { padding: 7px 6px; font-size: 12px; }
+  footer .botones select { font-size: 12px; padding: 6px; grid-column: span 2; }
+  footer .botones .ancho2b { grid-column: 1 / -1; }
+  footer .botones .ancho { grid-column: 1 / -1; background: #9C2315; border-color: #C8402D; }
+  #cuenta, #donde { font-size: 12px; color: #B5A5A0; }
+  /* abajo del mapa: los pasos que tienen sentido ahora (con su tecla) y una línea corta de cómo moverse */
+  #ayuda { position: absolute; left: 12px; bottom: 10px; right: 352px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; pointer-events: none; }
+  #ayuda > small { font-size: 12px; color: #E0B2B2; background: rgba(17,17,17,0.75); padding: 5px 9px; text-align: right; max-width: 42%; }
+  #siguiente { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  #siguiente:empty { display: none; }
+  #siguiente b { font-size: 12px; color: #FFD98A; background: rgba(17,17,17,0.85); padding: 6px 9px; }
+  #siguiente .paso { pointer-events: auto; display: inline-flex; align-items: center; gap: 7px; font-size: 13px; padding: 6px 10px; background: rgba(28,23,20,0.92); border: 1px solid #4A3630; color: #F2ECEC; }
+  #siguiente span.paso { color: #E0B2B2; }
+  #siguiente .paso.primero { border-color: #FFD98A; }
+  #siguiente kbd { font: inherit; font-size: 11px; color: #FFD98A; background: #111111; border: 1px solid #4A3630; padding: 1px 5px; }
+  .herr button[data-tecla] { position: relative; }
+  .herr button[data-tecla]::after { content: attr(data-tecla); position: absolute; top: 2px; right: 4px; font-size: 9px; color: #B5A5A0; }
+  .herr button.activo[data-tecla]::after { color: #FFD98A; }
+  #hPoner, #hMover, #hBorrar { font-weight: 600; }
+  #ponerOpc.apagado { opacity: 0.45; }
+  #vistaOpc { margin: 2px 0 4px; }
+  #vistaOpc summary { cursor: pointer; padding: 6px 16px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #FFD98A; }
+  #bDescargar.pendiente::after { content: " •"; color: #FFD98A; }
+  #aviso { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); background: #1C1714; border: 1px solid #9C2315; padding: 8px 14px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 60%; }
+  #aviso.ver { opacity: 1; }
+  .oculto { display: none !important; }
+  /* el panel del camino y el del agua son iguales, cada uno con su color */
+  #camPanel, #aguaPanel { margin: 4px 12px 6px; padding: 10px 4px; border: 1px solid #C9A45A; background: #241A17; display: flex; flex-direction: column; gap: 2px; }
+  #aguaPanel { border-color: #73D5DB; }
+  #camPanel > b, #aguaPanel > b { padding: 0 12px; color: #FFD98A; font-size: 14px; }
+  #aguaPanel > b { color: #73D5DB; }
+  #camPanel .fila > span, #aguaPanel .fila > span { width: 56px; }
+  #camPanel select, #aguaPanel select { flex: 1; }
+  #camPanel .botones3, #aguaPanel .botones3 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px 12px 0; }
+  #camPanel button, #aguaPanel button { font-size: 12px; padding: 7px 6px; }
+  #camPanel .ayudita, #aguaPanel .ayudita { display: block; padding: 4px 12px 0; color: #B5A5A0; font-size: 12px; line-height: 1.35; }
+  #selPanel { margin: 4px 12px 6px; padding: 10px 4px 10px; border: 1px solid #FFD98A; background: #241A17; display: flex; flex-direction: column; gap: 2px; }
+  #selPanel > b { padding: 0 12px; color: #FFD98A; font-size: 15px; }
+  #selPanel > small { padding: 0 12px; color: #B5A5A0; font-size: 12px; }
+  #selPanel .fila > span { width: 76px; font-size: 12px; }
+  #selPanel .botones3 { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 6px; padding: 6px 12px 0; }
+  #selPanel button { font-size: 12px; padding: 7px 6px; }
+  #notaCaja { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, calc(100vw - 32px)); background: #1C1714; border: 1px solid #FFD98A; padding: 14px; display: none; flex-direction: column; gap: 8px; box-sizing: border-box; }
+  #notaCaja.ver { display: flex; }
+  #notaCaja b { color: #FFD98A; font-size: 14px; }
+  #notaCaja textarea { font: inherit; font-size: 15px; background: #111111; color: #F2ECEC; border: 1px solid #4A3630; padding: 8px; resize: vertical; }
+  #notaCaja .botones { display: flex; gap: 6px; justify-content: flex-end; }
+  #notaCaja .listo { background: #9C2315; border-color: #C8402D; }
+  .obj { position: relative; }
+  .obj .estrella { position: absolute; top: 4px; right: 6px; font-style: normal; font-size: 16px; color: #B5A5A0; padding: 0 2px; line-height: 1; }
+  .obj .estrella.si { color: #FFD98A; }
+  #guardadoV { font-size: 12px; color: #7BC86C; }
+  footer select { font-size: 13px; padding: 6px; }
+  #notaCaja .hecha { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+  #mini { position: absolute; left: 12px; top: 12px; width: 200px; height: 130px; border: 1px solid #4A3630; background: #1E2C1B; cursor: pointer; touch-action: none; }
+  #revision, #atajos, #iaPanel { position: absolute; background: #1C1714; border: 1px solid #FFD98A; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; }
+  #revision { right: 352px; top: 12px; width: min(380px, calc(100vw - 32px)); max-height: 60%; }
+  #revision ul { margin: 0; padding: 0; list-style: none; overflow: auto; }
+  #revision li button { width: 100%; text-align: left; margin-bottom: 4px; background: #241A17; }
+  #atajos { left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(620px, calc(100vw - 32px)); max-height: 80%; }
+  #atajos pre { margin: 0; white-space: pre-wrap; font: inherit; font-size: 13px; line-height: 1.5; overflow: auto; color: #F2ECEC; }
+  .cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .cab b { color: #FFD98A; }
+  #comandos { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); width: min(560px, calc(100vw - 32px)); background: #1C1714; border: 1px solid #FFD98A; display: flex; flex-direction: column; }
+  #comandos input { font: inherit; font-size: 16px; background: #111111; color: #F2ECEC; border: 0; border-bottom: 1px solid #4A3630; padding: 12px 14px; }
+  #comandos ul { list-style: none; margin: 0; padding: 4px 0; max-height: 50vh; overflow: auto; }
+  #comandos li { padding: 8px 14px; font-size: 14px; display: flex; justify-content: space-between; gap: 12px; cursor: pointer; }
+  #comandos li small { color: #B5A5A0; }
+  #comandos li.activo { background: #9C2315; }
+  #iaPanel { right: 352px; bottom: 44px; width: min(420px, calc(100vw - 32px)); max-height: calc(100% - 60px); border-color: #73D5DB; }
+  #iaPanel .cab b { color: #73D5DB; }
+  #iaPanel .fila2 { display: flex; gap: 6px; }
+  #iaPanel .fila2 > * { flex: 1; min-width: 0; font: inherit; font-size: 13px; background: #111111; color: #F2ECEC; border: 1px solid #4A3630; padding: 7px 8px; }
+  #iaPanel small { color: #B5A5A0; font-size: 12px; line-height: 1.35; }
+  #iaPanel textarea { font: inherit; font-size: 14px; background: #111111; color: #F2ECEC; border: 1px solid #4A3630; padding: 8px; resize: vertical; }
+  #iaChat { overflow: auto; display: flex; flex-direction: column; gap: 6px; max-height: 32vh; }
+  #iaChat p { margin: 0; font-size: 13px; line-height: 1.4; padding: 6px 8px; background: #241A17; border-left: 3px solid #73D5DB; white-space: pre-wrap; }
+  #iaChat p.yo { border-left-color: #FFD98A; }
+  #iaChat p.error { border-left-color: #C8402D; }
+  #iaPanel details { border: 1px solid #4A3630; padding: 6px 8px; }
+  #iaPanel summary { cursor: pointer; color: #73D5DB; font-size: 13px; }
+  .iaFilaIA { display: grid; grid-template-columns: 62px minmax(0, 1fr) minmax(0, 1.3fr) 16px; gap: 6px; align-items: center; margin-top: 6px; font-size: 13px; }
+  .iaFilaIA input { min-width: 0; font: inherit; font-size: 12.5px; background: #111111; color: #F2ECEC; border: 1px solid #4A3630; padding: 5px 6px; }
+  .iaFilaIA i { font-style: normal; color: #B5A5A0; text-align: center; }
+  .iaFilaIA i.si { color: #7BC86C; }
+  .iaTarea { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 8px; align-items: center; margin-top: 6px; font-size: 13px; }
+  .iaTarea small { display: block; }
+  .iaTarea select { min-width: 0; font: inherit; font-size: 12.5px; background: #111111; color: #F2ECEC; border: 1px solid #4A3630; padding: 4px; }
+  #iaPanel .botones { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+  #iaPanel .listo { background: #9C2315; border-color: #C8402D; }
+  #boVarias { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #3A2A26; padding-top: 8px; }
+  #boVarias > b { color: #7BC86C; font-size: 13px; }
+  #boVariasLista { display: flex; flex-direction: column; gap: 6px; }
+  #boPanel button[disabled] { opacity: .45; cursor: default; }
+  /* «Guardar en el juego»: la clave de GitHub y el PR */
+  #ghPanel { position: absolute; right: 352px; bottom: 44px; width: min(400px, calc(100vw - 32px)); background: #1C1714; border: 1px solid #FFD98A; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; z-index: 20; }
+  #ghPanel .cab { display: flex; justify-content: space-between; align-items: center; }
+  #ghPanel .cab b { color: #FFD98A; }
+  #ghPanel label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: #E0B2B2; }
+  #ghPanel input { font: inherit; font-size: 13px; background: #111111; color: #F2ECEC; border: 1px solid #4A3630; padding: 6px 8px; }
+  #ghPanel small { color: #B5A5A0; font-size: 12px; line-height: 1.4; }
+  #ghPanel small.error { color: #FF8D71; }
+  #ghPanel a { color: #73D5DB; }
+  #ghPanel .botones { display: flex; justify-content: flex-end; }
+  #ghPanel .listo { background: #9C2315; border-color: #C8402D; }
+  #ghPanel button[disabled] { opacity: .45; }
+  body.foco #ghPanel { right: 12px; }
+  #iaVarias { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #3A2A26; padding-top: 8px; }
+  #iaVarias > b { color: #73D5DB; font-size: 13px; }
+  #iaVariasLista, #boVariasLista { display: flex; flex-direction: column; gap: 6px; max-height: 34vh; overflow: auto; }
+  .iaVar { background: #241A17; border-left: 4px solid #73D5DB; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; }
+  .iaVar.mal { opacity: .7; }
+  .iaVarCab { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .iaVarCab small { text-align: right; }
+  .iaVarFila { display: flex; gap: 14px; font-size: 13px; }
+  .iaVarFila label { display: flex; gap: 5px; align-items: center; }
+  .iaVar details summary { font-size: 12px; color: #B5A5A0; border: 0; }
+  .iaVar details { border: 0 !important; padding: 0 !important; }
+  .iaVar details p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.4; white-space: pre-wrap; color: #E0B2B2; }
+  #iaPanel button[disabled] { opacity: .45; cursor: default; }
+  /* subir un boceto de mapa (U): arriba a la derecha del mapa */
+  #boPanel { position: absolute; right: 352px; top: 12px; width: min(400px, calc(100vw - 32px)); max-height: calc(100% - 60px); overflow: auto; background: #1C1714; border: 1px solid #7BC86C; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; }
+  #boPanel .cab b { color: #7BC86C; }
+  #boPanel small, #boPanel li, #boPanel summary { font-size: 12.5px; line-height: 1.4; color: #D8CCC8; }
+  #boPanel summary { cursor: pointer; color: #FFD98A; font-size: 13px; }
+  #boPanel ul { margin: 6px 0 0; padding-left: 18px; }
+  #boLeyenda { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin-top: 6px; }
+  #boLeyenda span { display: flex; gap: 6px; align-items: center; font-size: 12.5px; }
+  #boLeyenda i { width: 14px; height: 14px; flex: none; }
+  #boVista { width: 100%; height: 200px; background: #111111; border: 1px solid #4A3630; display: block; }
+  #boVacio { font-size: 13px; color: #B5A5A0; text-align: center; padding: 18px 8px; border: 1px dashed #4A3630; }
+  #boChequeo { list-style: none; padding: 0 !important; margin: 0 !important; }
+  #boChequeo li.ok { color: #7BC86C; }
+  #boChequeo li.mal { color: #FF8D71; }
+  #boPanel textarea { font: inherit; font-size: 13px; background: #111111; color: #F2ECEC; border: 1px solid #4A3630; padding: 8px; resize: vertical; }
+  #boPanel .botones { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+  #boPanel .listo { background: #9C2315; border-color: #C8402D; }
+  #boIA.activo { background: #2A4A6A; border-color: #73D5DB; color: #F2ECEC; }
+  #boIAQuien { white-space: pre-wrap; }
+  .herr .ancho3 { grid-column: 1 / -1; }
+  .herr .ancho2 { grid-column: span 2; }
+  /* el generador de texturas: arriba a la izquierda, debajo del minimapa */
+  #txPanel { position: absolute; left: 12px; top: 152px; width: min(380px, calc(100vw - 32px)); max-height: calc(100% - 240px); overflow: auto; background: #1C1714; border: 1px solid #F5A524; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; }
+  #txPanel .cab b { color: #F5A524; }
+  #txPanel .txArriba { display: flex; gap: 10px; }
+  #txVista { width: 176px; height: 176px; flex: none; border: 1px solid #4A3630; display: block; }
+  #txPanel .txVistaCol { display: flex; flex-direction: column; gap: 6px; width: 176px; flex: none; }
+  #txPanel.soltando { border-color: #FFD98A; box-shadow: inset 0 0 0 2px #FFD98A; }
+  #txMuestras { display: grid; grid-template-columns: repeat(14, 1fr); gap: 2px; }
+  #txMuestras button { padding: 0; height: 16px; border: 1px solid #111111; }
+  #txPanel .txTonos button, #txPanel .txDatos .fila2 button { flex: 1; font-size: 12px; padding: 6px 4px; }
+  #txPanel .fila > span, #txPanel .fila2 > span { min-width: 64px; font-size: 12px; }
+  #txPanel .txColores input.activo { outline: 2px solid #FFD98A; outline-offset: 1px; }
+  #txVariantesL { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  #txVariantesL canvas { width: 100%; aspect-ratio: 1; cursor: pointer; border: 1px solid #4A3630; }
+  #txVariantesL canvas:hover { border-color: #FFD98A; }
+  #txPanel .txChk { display: flex; gap: 4px; align-items: center; font-size: 12px; white-space: nowrap; }
+  .txFicha small { font-size: 10px; color: #B5A5A0; }
+  #txPanel .txDatos { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+  #txPanel input[type=text], #txPanel textarea, #txPanel select { font: inherit; font-size: 13px; background: #111111; color: #F2ECEC; border: 1px solid #4A3630; padding: 6px 8px; box-sizing: border-box; width: 100%; }
+  #txPanel textarea { resize: vertical; }
+  #txPanel .fila { padding: 2px 0; }
+  #txPanel .fila2 { display: flex; gap: 6px; align-items: center; }
+  #txPanel .fila2 > select { flex: 1; }
+  #txPanel .txColores input { flex: 1; height: 30px; padding: 0; border: 1px solid #4A3630; background: #111111; }
+  #txPanel .txOpc { font-size: 12px; flex-wrap: wrap; }
+  #txPanel .txOpc label { display: flex; gap: 4px; align-items: center; }
+  #txPanel .txSub { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #FFD98A; }
+  #txPanel .listo { background: #9C2315; border-color: #C8402D; }
+  #txManual.apagado { opacity: 0.45; }
+  #txEstado { font-size: 12px; color: #B5A5A0; min-height: 1em; }
+  #txEstado.error { color: #FF8D71; }
+  #txLista { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 6px; }
+  .txFicha { display: flex; align-items: center; gap: 6px; padding: 4px; text-align: left; position: relative; }
+  .txFicha canvas { width: 36px; height: 36px; flex: none; }
+  .txFicha span { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .txFicha i { font-style: normal; color: #B5A5A0; padding: 0 4px; }
+  .txFicha.elegido { border-color: #F5A524; }
+  #pincelPanel { margin: 4px 12px; padding: 6px 0; border: 1px solid #7BC86C; }
+  #pincelPanel .fila select { width: 100%; }
+  .pincelAyuda { display: block; padding: 2px 16px; color: #B5A5A0; font-size: 12px; line-height: 1.35; }
+  #selInterior { margin: 4px 16px; background: #2A3A3C; border-color: #73D5DB; }
+  /* los interiores: el cuarto de frente a la izquierda, su panel a la derecha */
+  #cuartos { position: fixed; inset: 0; z-index: 30; display: grid; grid-template-columns: minmax(0, 1fr) 320px; background: #0A0606; }
+  #cuartos.oculto { display: none; }
+  #zonas { position: fixed; inset: 0; z-index: 30; display: grid; grid-template-columns: minmax(0, 1fr) 340px; background: #0A0606; }
+  #zonas.oculto { display: none; }
+  #znLienzo { width: 100%; height: 100%; touch-action: none; cursor: pointer; }
+  #zonas aside { overflow: auto; background: #111111; border-left: 1px solid #3A2A26; }
+  #zonas aside header { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 16px; }
+  #zonas .fila select, #zonas .fila input[type=range] { flex: 1; }
+  #zonas small { display: block; padding: 2px 16px; color: #B5A5A0; font-size: 12px; line-height: 1.35; }
+  #zonas .botones3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px 16px; }
+  #zonas .listo { background: #9C2315; border-color: #C8402D; }
+  #znNombre { font: inherit; font-family: "Eromash Display", system-ui, sans-serif; font-size: 18px; color: #FFD98A; background: #111111; border: 1px solid #4A3630; padding: 6px 8px; margin: 0 16px; width: calc(100% - 32px); box-sizing: border-box; }
+  #znGen { margin: 6px 16px; border: 1px solid #3A2A26; background: #181311; }
+  #znGen summary { padding: 8px 10px; cursor: pointer; color: #FFD98A; }
+  #znGen textarea { font: inherit; font-size: 13px; width: calc(100% - 20px); margin: 0 10px; box-sizing: border-box; background: #111111; color: #F2ECEC; border: 1px solid #4A3630; padding: 6px; resize: vertical; }
+  #znGen .botones3 { padding: 6px 10px; }
+  #znSel { margin: 6px 12px; padding: 8px 4px; border: 1px solid #73D5DB; }
+  #znSel b { padding: 0 12px; color: #73D5DB; }
+  @media (max-width: 760px) { #zonas { grid-template-columns: 1fr; grid-template-rows: 55% 45%; } }
+  #npcs { position: fixed; top: 34px; right: 0; bottom: 0; width: 360px; max-width: 100vw; z-index: 25; background: #111111; border-left: 1px solid #3A2A26; overflow: auto; }
+  #npcs.oculto { display: none; }
+  #npcs header { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 16px; }
+  #npcs small { display: block; padding: 2px 16px; color: #B5A5A0; font-size: 12px; line-height: 1.35; }
+  #npcs .fila select, #npcs .fila input[type=range], #npcs .fila input[type=text] { flex: 1; min-width: 0; }
+  #npcs input[type=text], #npcs textarea { font: inherit; font-size: 13px; background: #181311; color: #F2ECEC; border: 1px solid #4A3630; padding: 6px; }
+  #npcs textarea { width: calc(100% - 32px); margin: 2px 16px; box-sizing: border-box; resize: vertical; }
+  #npcs .botones3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px 16px; }
+  #npcs .listo { background: #9C2315; border-color: #C8402D; }
+  .npVistas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px 16px; }
+  .npVista { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; border: 1px dashed #4A3630; padding: 4px; }
+  .npVista.sobre { border-color: #73D5DB; background: #16201F; }
+  .npVista canvas { width: 96px; height: 128px; cursor: pointer; }
+  .npVista span { font-size: 12px; color: #E0B2B2; }
+  .npVista button { position: absolute; top: 2px; right: 2px; padding: 0 6px; min-height: 0; line-height: 18px; }
+  #cuartoLienzo { width: 100%; height: 100%; display: block; touch-action: none; }
+  #cuartos aside { overflow: auto; }
+  #cuCabeza { padding: 4px 16px 6px; display: flex; flex-direction: column; gap: 2px; }
+  #cuNombre { font: inherit; font-family: "Eromash Display", system-ui, sans-serif; font-size: 18px; color: #FFD98A; background: #111111; border: 1px solid #4A3630; padding: 6px 8px; }
+  #cuNombre:hover { border-color: #9C2315; }
+  #cuartos #cuQue { color: #E0B2B2; padding: 0; }
+  #cuPlano { margin: 4px 16px; width: calc(100% - 32px); height: 125px; background: #141010; border: 1px solid #3A2A26; cursor: pointer; touch-action: none; }
+  #cuGen { margin: 6px 16px; border: 1px solid #3A2A26; background: #181311; }
+  #cuGen summary { padding: 8px 10px; cursor: pointer; color: #FFD98A; }
+  #cuGen textarea { font: inherit; font-size: 13px; width: calc(100% - 20px); margin: 0 10px; box-sizing: border-box; background: #111111; color: #F2ECEC; border: 1px solid #4A3630; padding: 6px; resize: vertical; }
+  #cuGen .fila { padding: 4px 10px; }
+  #cuGen .botones3 { padding: 6px 10px !important; }
+  #cuartos aside > .botones3, #cuGen .botones3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  #cuartos .listo { background: #9C2315; border-color: #C8402D; }
+  #cuartos aside header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  #cuartos .fila select { flex: 1; }
+  #cuartos small { display: block; padding: 2px 16px; color: #B5A5A0; font-size: 12px; line-height: 1.35; }
+  #cuSel { margin: 6px 12px; padding: 8px 4px; border: 1px solid #73D5DB; }
+  #cuSel b { padding: 0 12px; color: #73D5DB; }
+  #cuSel .botones3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  #cuLista { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 6px 12px 16px; }
+  @media (max-width: 760px) { #cuartos { grid-template-columns: 1fr; grid-template-rows: 55% 45%; } }
+  body.foco .ed { grid-template-columns: minmax(0, 1fr); }
+  body.foco aside, body.foco #ayuda { display: none; }
+  body.foco #revision, body.foco #iaPanel, body.foco #boPanel { right: 12px; }
+  @media (max-width: 760px) {
+    #mini { display: none; }
+    #revision, #iaPanel, #boPanel { right: 12px; }
+    #txPanel { top: 12px; max-height: calc(55% - 24px); }
+    .ed { grid-template-columns: 1fr; grid-template-rows: 55% 45%; }
+    aside { border-left: 0; border-top: 1px solid #3A2A26; }
+    #ayuda { right: 12px; bottom: calc(45% + 8px); }
+    footer #cuenta, footer #donde, footer #guardadoV { display: none; }
+  }
+</style>
+</head>
+<body>
+<nav id="menubar" aria-label=""></nav>
+<div class="ed">
+  <canvas id="mapa"></canvas>
+  <aside>
+    <div id="pestanasLado" role="tablist">
+      <button id="pObjetos" role="tab" class="activa" data-i18n="ed.cp_objetos"></button>
+      <button id="pCapas" role="tab" data-tecla="L"><span data-i18n="ed.cp_titulo"></span> <small id="pCapaActiva"></small></button>
+    </div>
+    <div id="ladoObjetos">
+    <div id="planoBar">
+      <input id="planoNombre" type="text" spellcheck="false" />
+    </div>
+    <div class="herr">
+      <button id="hPoner" data-tecla="1" class="activo" data-i18n="ed.poner"></button>
+      <button id="hMover" data-tecla="2" data-i18n="ed.mover"></button>
+      <button id="hBorrar" data-tecla="3" data-i18n="ed.borrar"></button>
+      <button id="hCamino" data-tecla="4" data-i18n="ed.camino"></button>
+      <button id="hNota" data-tecla="5" data-i18n="ed.nota"></button>
+      <button id="hAgua" data-tecla="6" data-i18n="ed.agua"></button>
+      <button id="hMedir" data-tecla="7" data-i18n="ed.medir"></button>
+      <button id="hRegion" data-tecla="0" data-i18n="ed.region"></button>
+      <button id="hPincel" data-tecla="B" data-i18n="ed.pincel"></button>
+    </div>
+    <div id="camPanel" class="oculto">
+      <b id="camTitulo"></b>
+      <div class="fila"><span data-i18n="ed.cam_tipo"></span><select id="camTipo"><option value="tierra" data-i18n="ed.cam_tierra"></option><option value="adoquin" data-i18n="ed.cam_adoquin"></option><option value="ladrillo" data-i18n="ed.cam_ladrillo"></option></select></div>
+      <div class="fila"><span data-i18n="ed.cam_borde"></span><select id="camBorde"><option value="" data-i18n="ed.cam_b_ninguno"></option><option value="pasto" data-i18n="ed.cam_b_pasto"></option><option value="musgo" data-i18n="ed.cam_b_musgo"></option><option value="agua" data-i18n="ed.cam_b_agua"></option><option value="tierra" data-i18n="ed.cam_b_tierra"></option></select></div>
+      <div class="fila"><label><input id="camFundir" type="checkbox" checked /><span data-i18n="ed.cam_fundir"></span></label></div>
+      <div id="camElegido" class="oculto">
+        <div class="fila"><span data-i18n="ed.cam_ancho"></span><input id="camAncho" type="range" min="40" max="400" step="5" value="110" /><b id="camAnchoV">110</b></div>
+        <div id="camTramo" class="oculto"><div class="fila"><span id="camTramoN"></span><select id="camTramoTipo"><option value="" data-i18n="ed.cam_como_camino"></option><option value="tierra" data-i18n="ed.cam_tierra"></option><option value="adoquin" data-i18n="ed.cam_adoquin"></option><option value="ladrillo" data-i18n="ed.cam_ladrillo"></option></select></div><div class="botones3"><button id="camTramoSacar" data-i18n="ed.cam_tramo_sacar"></button></div></div>
+        <small class="ayudita" data-i18n="ed.cam_puntos"></small>
+        <div class="botones3"><button id="camCortar" data-i18n="ed.cam_cortar"></button><button id="camSacar" data-i18n="ed.cam_sacar"></button><button id="camSoltar" data-i18n="ed.sel_soltar"></button></div>
+      </div>
+    </div>
+    <div id="aguaPanel" class="oculto">
+      <b id="aguaTitulo"></b>
+      <div id="aguaNueva" class="fila"><span data-i18n="ed.agua_forma"></span><select id="aguaForma"><option value="rio" data-i18n="ed.agua_f_rio"></option><option value="laguna" data-i18n="ed.agua_f_laguna"></option></select></div>
+      <div id="aguaFilaAncho" class="fila"><span data-i18n="ed.cam_ancho"></span><input id="aguaAncho" type="range" min="80" max="900" step="10" value="300" /><b id="aguaAnchoV">300</b></div>
+      <div id="aguaFilasLago" class="oculto">
+        <div class="fila"><span data-i18n="ed.sel_ancho"></span><input id="aguaRx" type="range" min="150" max="2400" step="10" value="600" /><b id="aguaRxV">600</b></div>
+        <div class="fila"><span data-i18n="ed.sel_alto"></span><input id="aguaRy" type="range" min="100" max="1800" step="10" value="400" /><b id="aguaRyV">400</b></div>
+      </div>
+      <div id="aguaTramo" class="oculto">
+        <div class="fila"><span id="aguaTramoN"></span><input id="aguaTramoAncho" type="range" min="80" max="900" step="10" value="300" /><b id="aguaTramoV">300</b></div>
+        <div class="botones3"><button id="aguaTramoComo" data-i18n="ed.agua_como_rio"></button></div>
+      </div>
+      <small id="aguaAyuda" class="ayudita" data-i18n="ed.agua_puntos"></small>
+      <div id="aguaElegida" class="oculto"><div class="botones3"><button id="aguaSacar" data-i18n="ed.agua_sacar"></button><button id="aguaSoltar" data-i18n="ed.sel_soltar"></button></div></div>
+    </div>
+    <div id="pincelPanel" class="oculto">
+      <div class="fila"><select id="pincelModo">
+        <option value="bosque" data-i18n="ed.pincel_bosque"></option>
+        <option value="abetal" data-i18n="ed.pincel_abetal"></option>
+        <option value="robledal" data-i18n="ed.pincel_robledal"></option>
+        <option value="abedular" data-i18n="ed.pincel_abedular"></option>
+        <option value="rocas" data-i18n="ed.pincel_rocas"></option>
+        <option value="sotobosque" data-i18n="ed.pincel_sotobosque"></option>
+        <option value="elegido" data-i18n="ed.pincel_elegido"></option>
+        <option value="abrir" data-i18n="ed.pincel_abrir"></option>
+        <option value="textura" data-i18n="ed.pincel_textura"></option>
+      </select></div>
+      <div class="fila"><span data-i18n="ed.pincel_radio"></span><input id="pincelRadio" type="range" min="60" max="2400" step="20" value="600" /><b id="pincelRadioV"></b></div>
+      <div class="fila" id="pincelFilaDensidad"><span data-i18n="ed.pincel_densidad"></span><input id="pincelDensidad" type="range" min="1" max="12" step="1" value="4" /><b id="pincelDensidadV"></b></div>
+      <div class="fila" id="pincelFilaBordes"><label><input id="pincelBordes" type="checkbox" checked /><span data-i18n="ed.pincel_bordes"></span></label></div>
+      <small class="pincelAyuda" data-i18n="ed.pincel_ayuda"></small>
+    </div>
+    <div id="selPanel" class="oculto">
+      <b id="selNombre"></b>
+      <small id="selTipo"></small>
+      <div class="fila"><span data-i18n="ed.sel_tam"></span><input id="selEsc" type="range" min="0.3" max="3" step="0.05" value="1" /><b id="selEscV">1.00</b></div>
+      <div class="fila"><span data-i18n="ed.sel_ancho"></span><input id="selEx" type="range" min="0.4" max="2.5" step="0.05" value="1" /><b id="selExV">1.00</b></div>
+      <div class="fila"><span data-i18n="ed.sel_alto"></span><input id="selEy" type="range" min="0.4" max="2.5" step="0.05" value="1" /><b id="selEyV">1.00</b></div>
+      <div class="fila"><span data-i18n="ed.sel_rot"></span><input id="selRot" type="range" min="-180" max="180" step="5" value="0" /><b id="selRotV">0°</b></div>
+      <div class="fila"><span data-i18n="ed.sel_giro"></span><input id="selGiro" type="range" min="-180" max="180" step="5" value="0" /><b id="selGiroV">0°</b></div>
+      <small id="selDos" class="oculto" data-i18n="ed.sel_dos"></small>
+      <div class="fila"><label><input id="selEsp" type="checkbox" /><span data-i18n="ed.sel_esp"></span></label></div>
+      <div class="fila"><span data-i18n="ed.sel_orden"></span><button id="selAtras" data-i18n="ed.sel_atras"></button><button id="selAdelante" data-i18n="ed.sel_adelante"></button><b id="selOrdenV">0</b></div>
+      <div class="botones3"><button id="selAgregar" data-i18n="ed.sel_agregar"></button><button id="selComo" data-i18n="ed.sel_como"></button><button id="selSoltar" data-i18n="ed.sel_soltar"></button></div>
+      <button id="selInterior" class="oculto" data-i18n="ed.sel_interior"></button>
+      <div class="botones3"><button id="selIguales" data-i18n="ed.sel_iguales"></button><button id="selDuplicar" data-i18n="ed.sel_duplicar"></button><button id="selSacar" data-i18n="ed.sel_sacar"></button></div>
+      <div class="botones3"><button id="selCopiar" data-i18n="ed.sel_copiar"></button><button id="selPegar" style="grid-column: span 2" data-i18n="ed.sel_pegar"></button></div>
+    </div>
+    <div id="ponerOpc">
+    <div class="fila"><span data-i18n="ed.escala"></span><input id="escala" type="range" min="0.4" max="2.6" step="0.05" value="1" /><b id="escalaV">1.00</b></div>
+    <div class="fila">
+      <label><span data-i18n="ed.variante"></span><input id="variante" type="number" min="0" max="20" value="0" /></label>
+      <label><input id="espejo" type="checkbox" /><span data-i18n="ed.espejo"></span></label>
+      <label><input id="variar" type="checkbox" /><span data-i18n="ed.variar"></span></label>
+    </div>
+    </div>
+    <div class="fila"><select id="ir"></select></div>
+    <div class="fila"><input id="buscar" type="search" /></div>
+    <div id="lista"></div>
+    </div>
+    <div id="ladoCapas" class="oculto">
+      <div class="cpCab"><b data-i18n="ed.cp_propias"></b><button id="cpNueva" data-i18n="ed.cp_nueva"></button></div>
+      <div id="cpLista"></div>
+      <small class="cpAyuda" data-i18n="ed.cp_ayuda"></small>
+      <div class="cpCab"><b data-i18n="ed.cp_mundo"></b></div>
+      <div id="cpBase"></div>
+      <div class="fila"><span data-i18n="ed.cp_original_a"></span><input id="originalA" type="range" min="0.05" max="1" step="0.05" value="0.5" /><b id="originalV">50%</b></div>
+      <details id="vistaOpc"><summary data-i18n="ed.vista"></summary>
+      <div class="fila">
+        <label><input id="choques" type="checkbox" /><span data-i18n="ed.choques"></span></label>
+        <label><input id="historia" type="checkbox" /><span data-i18n="ed.nombres"></span></label>
+        <label><input id="grilla" type="checkbox" /><span data-i18n="ed.grilla"></span></label>
+      </div>
+      <div class="fila"><span data-i18n="ed.cp_historia"></span><select id="verHistoria" style="flex: 1"></select></div>
+      <div class="fila"><span data-i18n="ed.camara"></span><input id="camara" type="range" min="-180" max="180" step="15" value="0" /><b id="camaraV">0°</b><button id="norte" data-i18n="ed.norte"></button></div>
+      </details>
+      <div class="oculto">
+        <input id="verBosque" type="checkbox" checked /><input id="verNotas" type="checkbox" checked /><input id="bloquear" type="checkbox" />
+        <input id="verZonas" type="checkbox" checked /><input id="verRegiones" type="checkbox" /><input id="original" type="checkbox" />
+      </div>
+    </div>
+    <footer>
+      <div id="cuenta"></div>
+      <div id="donde"></div>
+      <div id="guardadoV"></div>
+      <div class="fila" style="padding: 0"><span data-i18n="ed.probar_con"></span><select id="probarMision"></select><select id="probarHora">
+        <option value="" data-i18n="ed.hora_ahora"></option><option value="7" data-i18n="ed.hora_alba"></option><option value="13" data-i18n="ed.hora_dia"></option><option value="18.5" data-i18n="ed.hora_tarde"></option><option value="23" data-i18n="ed.hora_noche"></option>
+      </select></div>
+      <div class="botones">
+        <button id="bDeshacer" data-i18n="ed.deshacer"></button>
+        <button id="bRehacer" data-i18n="ed.rehacer"></button>
+        <button id="bProbar" data-i18n="ed.probar"></button>
+        <button id="bDescargar" class="ancho" data-i18n="ed.descargar"></button>
+        <button id="bGuardarJuego" class="ancho2b" data-i18n="ed.gh_boton"></button>
+      </div>
+      <!-- lo que ahora vive en los menús (Archivo, Editar, Crear, IA, Ayuda): los botones siguen acá, escondidos -->
+      <div id="escondidos" class="oculto">
+        <button id="hIA" data-i18n="ed.ia"></button><button id="hComandos" data-i18n="ed.comandos"></button>
+        <button id="hInteriores" data-i18n="ed.interiores"></button><button id="hTexturas" data-i18n="ed.texturas"></button>
+        <button id="hZonas" data-i18n="ed.zonas"></button><button id="hNpc" data-i18n="ed.importar"></button><button id="hBoceto" data-i18n="ed.bo_boton"></button>
+        <button id="bRevisar" data-i18n="ed.revisar"></button><button id="bCopiar" data-i18n="ed.copiar"></button><button id="bAtajos" data-i18n="ed.atajos_b"></button>
+        <button id="bBorrador" data-i18n="ed.borrador_guardar"></button><select id="borradores"></select>
+        <button id="bPieza" data-i18n="ed.pieza_guardar"></button><select id="piezas"></select>
+        <button id="bCargar" data-i18n="ed.cargar"></button><button id="bLimpiar" data-i18n="ed.limpiar"></button>
+        <button id="bExportar" data-i18n="ed.exportar_corto" title=""></button>
+        <button id="planoDup" data-i18n="ed.plano_dup"></button><button id="planoCopiar" data-i18n="ed.plano_copiar"></button><button id="planoPegar" data-i18n="ed.plano_pegar"></button>
+        <input id="archivo" type="file" accept=".js,.json,text/javascript,application/json" hidden />
+      </div>
+    </footer>
+  </aside>
+</div>
+<div id="ayuda"><div id="siguiente"></div><small data-i18n="ed.ayuda_corta"></small></div>
+<div id="cuartos" class="oculto">
+  <canvas id="cuartoLienzo"></canvas>
+  <aside>
+    <header><h1 data-i18n="ed.cu_titulo"></h1><button id="cuCerrar" data-i18n="ed.cu_volver"></button></header>
+    <div id="cuCabeza">
+      <input id="cuNombre" type="text" spellcheck="false" data-i18n-ph="ed.cu_nombre_ph" />
+      <small id="cuQue"></small>
+    </div>
+    <div class="fila"><select id="cuPlantilla"></select></div>
+    <canvas id="cuPlano" width="600" height="260" class="oculto"></canvas>
+    <div class="botones3" style="padding: 4px 16px"><button id="cuDuplicar" data-i18n="ed.cu_duplicar"></button><button id="cuCopiar" data-i18n="ed.cu_copiar"></button><button id="cuPegar" data-i18n="ed.cu_pegar"></button></div>
+    <div class="botones3 soloPlano" style="padding: 4px 16px"><button id="cuAsignar" data-i18n="ed.cu_asignar"></button><button id="cuPonerCasa" data-i18n="ed.cu_poner_casa"></button><button id="cuBorrarPlano" data-i18n="ed.cu_borrar_plano"></button></div>
+    <details id="cuGen">
+      <summary data-i18n="ed.cu_gen"></summary>
+      <textarea id="cuGenTexto" rows="2" data-i18n-ph="ed.cu_gen_ph"></textarea>
+      <div class="fila"><span data-i18n="ed.cu_gen_cuartos"></span><input id="cuGenN" type="range" min="1" max="6" value="3" /><b id="cuGenNV">3</b></div>
+      <div class="fila"><span data-i18n="ed.cu_gen_secretos"></span><input id="cuGenS" type="range" min="0" max="3" value="1" /><b id="cuGenSV">1</b></div>
+      <div class="fila"><select id="cuGenComo"></select><select id="cuGenPared"></select></div>
+      <div class="botones3" style="padding: 4px 16px"><button id="cuGenIA" data-i18n="ed.cu_gen_ia"></button><button id="cuGenOtra" data-i18n="ed.cu_gen_otra"></button><button id="cuGenOk" class="listo" data-i18n="ed.cu_gen_ok"></button></div>
+    </details>
+    <small data-i18n="ed.cu_ayuda"></small>
+    <div class="fila soloCuarto"><span data-i18n="ed.cu_pared"></span><select id="cuPared"></select></div>
+    <div class="fila soloCuarto"><span data-i18n="ed.cu_ventana"></span><input id="cuVentana" type="range" min="0" max="1450" step="10" /></div>
+    <div class="fila soloCuarto"><span data-i18n="ed.cu_estandarte"></span><input id="cuEstandarte" type="range" min="0" max="1450" step="10" /></div>
+    <div class="fila"><label class="soloCuarto"><input id="cuRepisa" type="checkbox" /><span data-i18n="ed.cu_repisa"></span></label><label><input id="cuLuz" type="checkbox" checked /><span data-i18n="ed.cu_luz"></span></label></div>
+    <div class="fila"><small id="cuCuenta"></small><button id="cuComoEra" data-i18n="ed.cu_como_era"></button></div>
+    <div class="fila"><button id="cuProbar" style="flex: 1" data-i18n="ed.cu_probar"></button></div>
+    <div id="cuSel" class="oculto">
+      <b id="cuSelNombre"></b><small id="cuSelTipo"></small>
+      <div class="fila"><span data-i18n="ed.sel_tam"></span><input id="cuSelEsc" type="range" min="0.3" max="2.5" step="0.05" value="1" /><b id="cuSelEscV">1.00</b></div>
+      <div class="botones3" style="padding: 4px 12px"><button id="cuSelEsp" data-i18n="ed.cu_dar_vuelta"></button><button id="cuSelComo" data-i18n="ed.sel_como"></button><button id="cuSelSacar" data-i18n="ed.sel_sacar"></button></div>
+    </div>
+    <div class="grupo" style="padding: 0 16px" data-i18n="ed.cu_muebles"></div>
+    <div id="cuLista"></div>
+  </aside>
+</div>
+<div id="zonas" class="oculto">
+  <canvas id="znLienzo"></canvas>
+  <aside>
+    <header><h1 data-i18n="ed.zn_titulo"></h1><button id="znCerrar" data-i18n="ed.cu_volver"></button></header>
+    <small data-i18n="ed.zn_intro"></small>
+    <div class="fila"><select id="znLista"></select></div>
+    <details id="znGen" open>
+      <summary data-i18n="ed.zn_gen"></summary>
+      <textarea id="znGenTexto" rows="4" data-i18n-ph="ed.zn_gen_ph"></textarea>
+      <div class="botones3"><button id="znGenIA" data-i18n="ed.cu_gen_ia"></button><button id="znGenOtra" data-i18n="ed.cu_gen_otra"></button><button id="znGenOk" class="listo" data-i18n="ed.zn_gen_ok"></button></div>
+    </details>
+    <div class="conZona">
+      <input id="znNombre" type="text" spellcheck="false" />
+      <small id="znQue"></small>
+      <small id="znEntra"></small>
+      <div class="botones3"><button id="znEntrada" data-i18n="ed.zn_entrada"></button><button id="znIrEntrada" data-i18n="ed.zn_ir"></button><button id="znProbar" class="listo" data-i18n="ed.probar"></button></div>
+      <div class="fila soloMaz"><span data-i18n="ed.zn_jefe"></span><select id="znJefe"></select></div>
+      <div class="fila soloMaz"><span data-i18n="ed.zn_familia"></span><select id="znFamilia"></select><select id="znPal"><option value="0" data-i18n="ed.zn_pal0"></option><option value="1" data-i18n="ed.zn_pal1"></option><option value="2" data-i18n="ed.zn_pal2"></option></select></div>
+      <div class="botones3 soloMaz"><button id="znMasSala" data-i18n="ed.zn_mas_sala"></button></div>
+      <div class="fila soloTierra"><span data-i18n="ed.zn_bosque"></span><input id="znBosque" type="range" min="0" max="1.2" step="0.05" /></div>
+      <div class="fila soloTierra"><label><input id="znPasos" type="checkbox" /><span data-i18n="ed.zn_pasos"></span></label></div>
+      <div class="fila soloTierra"><button id="znMasIsla" data-i18n="ed.zn_mas_isla"></button><select id="znPoner"></select></div>
+      <small data-i18n="ed.zn_ayuda"></small>
+      <div id="znSel" class="oculto">
+        <b id="znSelNombre"></b>
+        <div class="fila" id="znSelSalaF"><span data-i18n="ed.zn_clase"></span><select id="znSelClase"></select></div>
+        <div class="fila" id="znSelCosaF"><span data-i18n="ed.zn_que_es"></span><select id="znSelCosa"></select></div>
+        <div id="znSelCuevaF"><div class="fila"><span data-i18n="ed.zn_lleva"></span><select id="znSelLleva"></select></div><div class="botones3"><button id="znSelCrear" data-i18n="ed.zn_crear_maz"></button><button id="znSelIr" data-i18n="ed.zn_ir_maz"></button></div></div>
+        <div class="botones3" id="znSelPuntoF"><button id="znSumarPunto" data-i18n="ed.zn_sumar_punto"></button><button id="znSacarPunto" data-i18n="ed.zn_sacar_punto"></button></div>
+        <div class="botones3"><button id="znUnir" data-i18n="ed.zn_unir"></button><button id="znSelSacar" data-i18n="ed.sel_sacar"></button></div>
+      </div>
+      <div class="botones3"><button id="znDuplicar" data-i18n="ed.cu_duplicar"></button><button id="znComoEra" data-i18n="ed.cu_como_era"></button><button id="znBorrar"></button></div>
+    </div>
+  </aside>
+</div>
+<div id="npcs" class="oculto">
+  <header><h1 data-i18n="ed.im_titulo"></h1><button id="npCerrar" data-i18n="ed.cerrar"></button></header>
+  <div class="fila"><span data-i18n="ed.im_clase"></span><select id="imClase"></select></div>
+  <small id="imIntro"></small>
+  <div id="imGente">
+    <div class="fila"><select id="npLista"></select><button id="npNuevo" data-i18n="ed.np_nuevo"></button></div>
+    <div class="conNpc">
+      <div class="fila"><span>ES</span><input id="npNombreEs" type="text" spellcheck="false" data-i18n-ph="ed.np_nombre_ph" /></div>
+      <div class="fila"><span>EN</span><input id="npNombreEn" type="text" spellcheck="false" data-i18n-ph="ed.np_nombre_ph" /></div>
+      <div class="npVistas">
+        <div class="npVista" data-v="S"><canvas width="96" height="128"></canvas><span data-i18n="ed.np_frente"></span><button>×</button></div>
+        <div class="npVista" data-v="N"><canvas width="96" height="128"></canvas><span data-i18n="ed.np_espalda"></span><button>×</button></div>
+        <div class="npVista" data-v="E"><canvas width="96" height="128"></canvas><span data-i18n="ed.np_costado"></span><button>×</button></div>
+      </div>
+      <small data-i18n="ed.np_vistas_ayuda"></small>
+      <div class="fila"><label><input id="npFondo" type="checkbox" checked /><span data-i18n="ed.np_fondo"></span></label></div>
+      <div class="fila"><span data-i18n="ed.np_tam"></span><input id="npTam" type="range" min="0.5" max="3" step="0.05" /><b id="npTamV"></b></div>
+      <div class="fila"><span data-i18n="ed.np_anda"></span><input id="npAnda" type="range" min="0" max="600" step="30" /><b id="npAndaV"></b></div>
+      <small data-i18n="ed.np_dialogo_ayuda"></small>
+      <textarea id="npDialogoEs" rows="4" data-i18n-ph="ed.np_dialogo_es"></textarea>
+      <textarea id="npDialogoEn" rows="4" data-i18n-ph="ed.np_dialogo_en"></textarea>
+      <small id="npLugar"></small>
+      <div class="botones3"><button id="npPoner" data-i18n="ed.np_poner"></button><button id="npIr" data-i18n="ed.zn_ir"></button><button id="npProbar" data-i18n="ed.probar"></button></div>
+      <div class="botones3"><button id="npBorrar" data-i18n="ed.zn_borrar"></button></div>
+      <small id="npPeso"></small>
+    </div>
+  </div>
+  <div id="imCosa" class="oculto">
+    <div class="fila"><select id="imLista"></select><button id="imNueva" data-i18n="ed.im_nueva"></button></div>
+    <div class="conIm">
+      <div class="fila"><span>ES</span><input id="imNombreEs" type="text" spellcheck="false" data-i18n-ph="ed.im_nombre_ph" /></div>
+      <div class="fila"><span>EN</span><input id="imNombreEn" type="text" spellcheck="false" data-i18n-ph="ed.im_nombre_ph" /></div>
+      <div class="npVistas"><div class="npVista" id="imVista"><canvas width="96" height="128"></canvas><span data-i18n="ed.im_imagen"></span><button>×</button></div></div>
+      <div class="fila"><label><input id="imFondo" type="checkbox" checked /><span data-i18n="ed.np_fondo"></span></label></div>
+      <div class="fila"><span data-i18n="ed.np_tam"></span><input id="imAlto" type="range" min="20" max="900" step="10" /><b id="imAltoV"></b></div>
+      <div class="fila soloEstructura"><label><input id="imChoque" type="checkbox" /><span data-i18n="ed.im_choque"></span></label></div>
+      <div class="botones3"><button id="imPoner" class="listo" data-i18n="ed.im_poner"></button><button id="imBorrar" data-i18n="ed.zn_borrar"></button></div>
+      <small id="imPeso"></small>
+    </div>
+  </div>
+  <div id="imTextura" class="oculto"><div class="botones3"><button id="imAbrirTex" class="listo" data-i18n="ed.im_abrir_tex"></button></div></div>
+  <small data-i18n="ed.np_publico"></small>
+</div>
+<canvas id="mini" width="200" height="130"></canvas>
+<div id="revision" class="oculto"><div class="cab"><b id="revTitulo"></b><button id="revCerrar" data-i18n="ed.cerrar"></button></div><ul id="revLista"></ul></div>
+<div id="atajos" class="oculto"><div class="cab"><b data-i18n="ed.atajos_titulo"></b><button id="atajosCerrar" data-i18n="ed.cerrar"></button></div><pre data-i18n="ed.atajos"></pre></div>
+<div id="comandos" class="oculto"><input id="comBuscar" type="search" autocomplete="off" /><ul id="comLista"></ul></div>
+<div id="iaPanel" class="oculto">
+  <div class="cab"><b data-i18n="ed.ia_titulo"></b><button id="iaCerrar" data-i18n="ed.cerrar"></button></div>
+  <div class="fila2"><select id="iaModo"><option value="auto" data-i18n="ed.ia_modo_auto"></option><option value="otra" data-i18n="ed.ia_otra"></option></select></div>
+  <details id="iaTus">
+    <summary data-i18n="ed.ia_tus"></summary>
+    <div class="iaFilaIA"><b>Claude</b><input id="iaModelo_claude" type="text" spellcheck="false" /><input id="iaClave_claude" type="password" autocomplete="off" spellcheck="false" data-i18n-ph="ed.ia_clave" /><i id="iaEstado_claude"></i></div>
+    <div class="iaFilaIA"><b>ChatGPT</b><input id="iaModelo_chatgpt" type="text" spellcheck="false" /><input id="iaClave_chatgpt" type="password" autocomplete="off" spellcheck="false" data-i18n-ph="ed.ia_clave" /><i id="iaEstado_chatgpt"></i></div>
+    <div class="iaFilaIA"><b>Gemini</b><input id="iaModelo_gemini" type="text" spellcheck="false" /><input id="iaClave_gemini" type="password" autocomplete="off" spellcheck="false" data-i18n-ph="ed.ia_clave" /><i id="iaEstado_gemini"></i></div>
+    <small id="iaClaveAyuda" data-i18n="ed.ia_clave_ayuda"></small>
+  </details>
+  <details id="iaCada">
+    <summary data-i18n="ed.ia_cada"></summary>
+    <div id="iaTareas"></div>
+  </details>
+  <small id="iaSinNinguna" class="oculto" data-i18n="ed.ia_sin_ninguna"></small>
+  <small id="iaZona"></small>
+  <div id="iaChat"></div>
+  <textarea id="iaPedido" rows="3" data-i18n-ph="ed.ia_ph"></textarea>
+  <div class="botones"><button id="iaZonaVista" data-i18n="ed.ia_zona_vista"></button><button id="iaCopiar" data-i18n="ed.ia_copiar"></button><button id="iaTodas" data-i18n="ed.ia_todas"></button><button id="iaEnviar" class="listo" data-i18n="ed.ia_enviar"></button></div>
+  <div id="iaVarias" class="oculto"><b data-i18n="ed.ia_todas_titulo"></b><div id="iaVariasLista"></div><div class="botones"><button id="iaVariasDescartar" data-i18n="ed.ia_descartar"></button><button id="iaVariasAplicar" class="listo"></button></div></div>
+  <div id="iaOtra" class="oculto"><textarea id="iaRespuesta" rows="3" data-i18n-ph="ed.ia_pegar"></textarea><div class="botones"><button id="iaLeer" class="listo" data-i18n="ed.ia_leer"></button></div></div>
+  <div id="iaPropuesta" class="oculto"><b id="iaResumen"></b><div class="botones"><button id="iaDescartar" data-i18n="ed.ia_descartar"></button><button id="iaAplicar" class="listo" data-i18n="ed.ia_aplicar"></button></div></div>
+</div>
+<div id="boPanel" class="oculto">
+  <div class="cab"><b data-i18n="ed.bo_titulo"></b><button id="boCerrar" data-i18n="ed.cerrar"></button></div>
+  <details id="boReglas" open>
+    <summary data-i18n="ed.bo_reglas"></summary>
+    <ul><li data-i18n="ed.bo_r1"></li><li data-i18n="ed.bo_r2"></li><li data-i18n="ed.bo_r3"></li><li data-i18n="ed.bo_r4"></li><li data-i18n="ed.bo_r5"></li><li data-i18n="ed.bo_r6"></li><li data-i18n="ed.bo_r7"></li></ul>
+    <div id="boLeyenda">
+      <span><i style="background:#4A78D0"></i><em data-i18n="ed.bo_l_agua"></em></span>
+      <span><i style="background:#111111;border:1px solid #4A3630"></i><em data-i18n="ed.bo_l_trazo"></em></span>
+      <span><i style="background:#7A4A26"></i><em data-i18n="ed.bo_l_marron"></em></span>
+      <span><i style="background:#3E7A3A"></i><em data-i18n="ed.bo_l_bosque"></em></span>
+      <span><i style="background:#C8402D"></i><em data-i18n="ed.bo_l_casa"></em></span>
+      <span><i style="background:#FFD98A"></i><em data-i18n="ed.bo_l_claro"></em></span>
+      <span><i style="background:#FF8D71"></i><em data-i18n="ed.bo_l_fuego"></em></span>
+      <span><i style="background:#9A6BD8"></i><em data-i18n="ed.bo_l_runa"></em></span>
+      <span><i style="background:#646A64"></i><em data-i18n="ed.bo_l_rocas"></em></span>
+    </div>
+  </details>
+  <input id="boArchivo" type="file" accept="image/*" class="oculto" />
+  <div class="botones"><button id="boElegir" class="listo" data-i18n="ed.bo_elegir"></button></div>
+  <div id="boVacio" data-i18n="ed.bo_vacio"></div>
+  <canvas id="boVista" width="376" height="200"></canvas>
+  <label><input id="boVerLeido" type="checkbox" checked /> <small data-i18n="ed.bo_ver_leido"></small></label>
+  <ul id="boChequeo"></ul>
+  <div class="fila"><span data-i18n="ed.bo_ancho"></span><input id="boAncho" type="range" min="60" max="800" step="10" value="200" /><b id="boAnchoV"></b></div>
+  <div class="fila"><span data-i18n="ed.bo_densidad"></span><input id="boDensidad" type="range" min="0.3" max="2.5" step="0.1" value="1" /><b id="boDensidadV"></b></div>
+  <label><input id="boDespejar" type="checkbox" checked /> <small data-i18n="ed.bo_despejar"></small></label>
+  <div class="botones"><button id="boCentrar" data-i18n="ed.bo_centrar"></button><button id="boLeerDeNuevo" data-i18n="ed.bo_releer"></button><button id="boIA" data-i18n="ed.bo_ia_off"></button></div>
+  <div id="boFilaIA" class="oculto">
+    <small id="boIAQuien"></small>
+    <textarea id="boPedido" rows="2" data-i18n-ph="ed.bo_pedido_ph"></textarea>
+    <div class="botones"><button id="boTodas" data-i18n="ed.ia_todas"></button><button id="boGenerar" class="listo" data-i18n="ed.bo_generar"></button></div>
+  </div>
+  <div id="boVarias" class="oculto"><b data-i18n="ed.ia_todas_titulo"></b><div id="boVariasLista"></div><div class="botones"><button id="boVariasDescartar" data-i18n="ed.ia_descartar"></button><button id="boVariasAplicar" class="listo"></button></div></div>
+  <div id="boPropuesta" class="oculto"><small id="boResumen"></small><div class="botones"><button id="boDescartar" data-i18n="ed.ia_descartar"></button><button id="boAplicar" class="listo" data-i18n="ed.ia_aplicar"></button></div></div>
+</div>
+<div id="txPanel" class="oculto">
+  <div class="cab"><b data-i18n="ed.tx_titulo"></b><span><button id="txVolver" data-i18n="ed.tx_volver"></button> <button id="txCerrar" data-i18n="ed.cerrar"></button></span></div>
+  <div class="txArriba">
+    <div class="txVistaCol">
+      <canvas id="txVista" width="176" height="176"></canvas>
+      <select id="txVer"><option value="cuadro" data-i18n="ed.tx_ver_cuadro"></option><option value="piso" data-i18n="ed.tx_ver_piso"></option><option value="bloque" data-i18n="ed.tx_ver_bloque"></option></select>
+    </div>
+    <div class="txDatos">
+      <input id="txNomEs" type="text" spellcheck="false" data-i18n-ph="ed.tx_nombre_es" />
+      <input id="txNomEn" type="text" spellcheck="false" data-i18n-ph="ed.tx_nombre_en" />
+      <select id="txUso"><option value="parche" data-i18n="ed.tx_uso_parche"></option><option value="bloque" data-i18n="ed.tx_uso_bloque"></option><option value="ambos" data-i18n="ed.tx_uso_ambos"></option></select>
+      <button id="txGuardar" class="listo" data-i18n="ed.tx_guardar"></button>
+      <div class="fila2"><button id="txNueva" data-i18n="ed.tx_nueva"></button><button id="txDuplicar" data-i18n="ed.tx_duplicar"></button><button id="txBajar" data-i18n="ed.tx_bajar"></button></div>
+    </div>
+  </div>
+  <div id="txManual">
+    <div class="fila2"><select id="txTipo"></select><button id="txSemilla" data-i18n="ed.tx_semilla"></button><button id="txSorpresa" data-i18n="ed.tx_sorpresa"></button></div>
+    <div class="fila2 txColores"><input id="txC0" type="color" /><input id="txC1" type="color" /><input id="txC2" type="color" /><input id="txC3" type="color" /></div>
+    <div id="txMuestras"></div>
+    <div class="fila2 txTonos"><button data-tono="claro" data-i18n="ed.tx_claro"></button><button data-tono="oscuro" data-i18n="ed.tx_oscuro"></button><button data-tono="calido" data-i18n="ed.tx_calido"></button><button data-tono="frio" data-i18n="ed.tx_frio"></button></div>
+    <div class="fila"><span data-i18n="ed.tx_tam"></span><input id="txTam" type="range" min="6" max="80" step="1" value="24" /><b id="txTamV"></b></div>
+    <div class="fila"><span data-i18n="ed.tx_dens"></span><input id="txDens" type="range" min="1" max="12" step="1" value="5" /><b id="txDensV"></b></div>
+    <div class="fila2"><button id="txVariantes" data-i18n="ed.tx_variantes"></button></div>
+    <div id="txVariantesL" class="oculto"></div>
+  </div>
+  <div id="txImagen" class="oculto">
+    <div class="fila"><span data-i18n="ed.tx_brillo"></span><input id="txBrillo" type="range" min="-0.6" max="0.6" step="0.05" value="0" /></div>
+    <div class="fila"><span data-i18n="ed.tx_contraste"></span><input id="txContraste" type="range" min="-0.6" max="0.8" step="0.05" value="0" /></div>
+    <div class="fila"><span data-i18n="ed.tx_saturacion"></span><input id="txSaturacion" type="range" min="-1" max="0.8" step="0.05" value="0" /></div>
+    <div class="fila2"><select id="txNColores"><option value="0" data-i18n="ed.tx_col_todos"></option><option value="16">16</option><option value="8">8</option><option value="4">4</option></select><label class="txChk"><input id="txLiviana" type="checkbox" /><span data-i18n="ed.tx_liviana"></span></label></div>
+  </div>
+  <b class="txSub" data-i18n="ed.tx_en_mapa"></b>
+  <div class="fila2"><span data-i18n="ed.tx_forma"></span><select id="txForma"><option value="quebrado" data-i18n="ed.tx_f_quebrado"></option><option value="redondo" data-i18n="ed.tx_f_redondo"></option><option value="alargado" data-i18n="ed.tx_f_alargado"></option><option value="manchas" data-i18n="ed.tx_f_manchas"></option></select></div>
+  <div class="fila"><span data-i18n="ed.tx_k"></span><input id="txK" type="range" min="0.4" max="3" step="0.1" value="1" /><b id="txKV"></b></div>
+  <div id="txMedBloque">
+    <div class="fila"><span data-i18n="ed.tx_alto"></span><input id="txAlto" type="range" min="8" max="140" step="2" value="26" /><b id="txAltoV"></b></div>
+    <div class="fila"><span data-i18n="ed.tx_fondo"></span><input id="txFondo" type="range" min="30" max="240" step="5" value="70" /><b id="txFondoV"></b></div>
+  </div>
+  <b class="txSub" data-i18n="ed.tx_con_ia"></b>
+  <textarea id="txPedido" rows="2" data-i18n-ph="ed.tx_ph"></textarea>
+  <div class="fila2"><select id="txFuente"><option value="receta" data-i18n="ed.tx_f_receta"></option><option value="imagen" data-i18n="ed.tx_f_imagen"></option><option value="chatgpt" data-i18n="ed.tx_f_chatgpt"></option><option value="gemini" data-i18n="ed.tx_f_gemini"></option></select><button id="txAfinar" data-i18n="ed.tx_afinar"></button><button id="txGenerar" class="listo" data-i18n="ed.tx_generar"></button></div>
+  <div class="fila2 txOpc"><label><input id="txPaleta" type="checkbox" checked /><span data-i18n="ed.tx_paleta"></span></label><label><input id="txEspejo" type="checkbox" checked /><span data-i18n="ed.tx_espejo"></span></label><button id="txSubir" data-i18n="ed.tx_subir"></button></div>
+  <input id="txArchivo" type="file" accept="image/*" hidden />
+  <small id="txEstado"></small>
+  <div id="txTuyas" class="oculto"><b class="txSub" data-i18n="ed.tx_tuyas"></b>
+    <div class="fila2"><button id="txElegirPuesto" data-i18n="ed.tx_elegir_puesto"></button><button id="txReemplazar" data-i18n="ed.tx_reemplazar"></button></div>
+    <div id="txLista"></div>
+  </div>
+</div>
+<div id="aviso"></div>
+<div id="notaCaja">
+  <b id="notaNum"></b>
+  <textarea id="notaTexto" rows="5" data-i18n-ph="ed.nota_ph"></textarea>
+  <label class="hecha"><input id="notaHecha" type="checkbox" /><span data-i18n="ed.nota_hecha"></span></label>
+  <div class="botones"><button id="notaBorrar" data-i18n="ed.nota_borrar"></button><button id="notaListo" class="listo" data-i18n="ed.nota_listo"></button></div>
+</div>
+<!-- el juego (sus assets, su mundo y sus mapas) y después el editor: los carga js/cargar.js -->
+<script src="../../js/cargar.js"></script>
+</body>
+</html>
