@@ -282,7 +282,7 @@
     return Object.assign({}, d, { x, y, o, mundo: d });
   }
   const croquis = new Image();
-  croquis.src = "mapas/eldervald-croquis.png";
+  if (!est.lienzo) croquis.src = "mapas/eldervald-croquis.png"; // un mapa de cero no tiene el de Eldervald
 
   // ---------- lo que se ve: el mundo con lo agregado y sin lo sacado ----------
   const sacado = (o) => est.quitar.some((q) => q.id === o.id && Math.abs(o.x - q.x) < 6 && Math.abs(o.y - q.y) < 6);
@@ -1453,8 +1453,8 @@
   }
   let firmasAgua = new Map();
   function aplicarAgua() {
-    RIOS0.forEach((r, i) => (r.seco = est.quitarRios.includes(i)));
-    LAGOS0.forEach((l, i) => (l.seco = est.quitarLagos.includes(i)));
+    RIOS0.forEach((r, i) => (r.seco = !!est.lienzo || est.quitarRios.includes(i)));
+    LAGOS0.forEach((l, i) => (l.seco = !!est.lienzo || est.quitarLagos.includes(i)));
     W.RIOS.length = 0;
     RIOS0.forEach((r, i) => {
       const e = est.estiloRios.find((q) => q.i === i);
@@ -2742,6 +2742,20 @@
     mc.fillStyle = "#1E2C1B";
     mc.fillRect(0, 0, w, h);
     if (croquis.complete && croquis.naturalWidth) mc.drawImage(croquis, 0, 0, w, (croquis.naturalHeight * w) / croquis.naturalWidth);
+    // un mapa de cero no tiene croquis: se ven su agua y sus caminos
+    if (est.lienzo) {
+      const linea = (l, col, an) => {
+        mc.strokeStyle = col;
+        mc.lineWidth = an;
+        mc.beginPath();
+        l.p.forEach(([x, y], i) => (i ? mc.lineTo(x * k, y * k) : mc.moveTo(x * k, y * k)));
+        mc.stroke();
+      };
+      mc.fillStyle = "#2A4C56";
+      est.lagos.forEach((l) => (mc.beginPath(), mc.ellipse(l.x * k, l.y * k, Math.max(1, l.rx * k), Math.max(1, l.ry * k), 0, 0, Math.PI * 2), mc.fill()));
+      est.rios.forEach((r) => linea(r, "#2A4C56", Math.max(1, r.w * k)));
+      est.caminos.forEach((cm) => linea(cm, "#5C4A32", Math.max(1, cm.w * k)));
+    }
     mc.fillStyle = "#FFD98A";
     est.poner.forEach((a) => mc.fillRect(a.x * k - 1, a.y * k - 1, 2, 2));
     est.notas.forEach((n) => {
@@ -3064,18 +3078,23 @@
   function texto() {
     const lineas = (l) => (l.length ? "\n    " + l.map((a) => JSON.stringify(a)).join(",\n    ") + ",\n  " : "");
     return (
-      "// Lo que se agregó o se sacó del mundo con el editor de Eldervald (repo map-generator). Este archivo lo escribe el editor\n" +
-      "// con «Descargar agregados.js»: se guarda acá, en aventura/js/mundo/, y el mundo lo aplica al armarse.\n" +
-      "window.AGREGADOS = {\n  nombre: " + JSON.stringify(est.nombre || "") + ",\n  poner: [" + lineas(est.poner) + "],\n  quitar: [" + lineas(est.quitar) + "],\n  mover: [" + lineas(est.mover) + "],\n  quitarDeco: [" + lineas(est.quitarDeco) + "],\n  caminos: [" + lineas(est.caminos) + "],\n  quitarCaminos: [" + est.quitarCaminos.join(", ") + "],\n  estiloCaminos: [" + lineas(est.estiloCaminos) + "],\n  rios: [" + lineas(est.rios) + "],\n  lagos: [" + lineas(est.lagos) + "],\n  quitarRios: [" + est.quitarRios.join(", ") + "],\n  quitarLagos: [" + est.quitarLagos.join(", ") + "],\n  estiloRios: [" + lineas(est.estiloRios) + "],\n  estiloLagos: [" + lineas(est.estiloLagos) + "],\n  // los interiores cambiados (pestaña Interiores): plantilla → pared, ventana, cambios por mueble y muebles puestos\n  cuartos: " + JSON.stringify(est.cuartos || {}) + ",\n  // casas de varios cuartos (generador de casas): cuartos, uniones y pasadizos; cada cuarto es la plantilla plano:<id>:<n>\n  casas: " + JSON.stringify(est.casas || {}) + ",\n  // zonas fuera del mapa (sección Zonas): mazmorras oscuras y tierras con islas, cada una con su entrada en el bosque\n  zonas: " + JSON.stringify(est.zonas || {}) + ",\n  // gente propia (Importar NPC): nombre, diálogo, lugar y sus dibujos por vista (imágenes achicadas)\n  npcs: [" + lineas(est.npcs || []) + "],\n  // imágenes importadas (estructuras, pinturas de pared y calcos en el piso): cada una es el asset im_<id>\n  imagenes: " + JSON.stringify(est.imagenes || {}) + ",\n  // regiones con nombre (el juego lo muestra al entrar) y piezas guardadas para reusar en el editor\n  regiones: [" + lineas(est.regiones || []) + "],\n  piezas: " + JSON.stringify(est.piezas || {}) + ",\n  // texturas hechas en el editor (generador de texturas): cada una es un asset tx_<id> (parche) o txb_<id> (bloque)\n  texturas: " + JSON.stringify(est.texturas || {}) + ",\n  // capas propias del editor (el juego las dibuja todas): id, nombre, prendida, trabada\n  capas: " + JSON.stringify(est.capas || []) + ",\n  capaSuelta: " + JSON.stringify(est.capaSuelta || {}) + ",\n  capaActiva: " + JSON.stringify(est.capaActiva || "") + ",\n  // notas para Claude: qué hacer en ese lugar (el juego no las usa)\n  notas: [" + lineas(est.notas) + "],\n};\n" +
-      "// ?borrador=1: el juego usa lo que está armado en el editor de este navegador, sin descargar nada\n" +
-      "try {\n  if (/[?&]borrador=1/.test(location.search)) {\n    const b = JSON.parse(localStorage.getItem(\"" + CLAVE + "\") || \"null\");\n    if (b && b.poner) window.AGREGADOS = b;\n  }\n} catch (e) {}\n"
+      (est.lienzo
+        ? "// Un mapa de cero hecho con el editor de mapas (repo map-generator): va en aventura/js/mundo/mapas/" + archivoMapa() + "\n" +
+          "// y se juega con index.html?mapa=" + est.mapaId + "&jugar=9. El mundo de base no se arma: solo lo de este archivo.\n"
+        : "// Lo que se agregó o se sacó del mundo con el editor de Eldervald (repo map-generator). Este archivo lo escribe el editor\n" +
+          "// con «Descargar agregados.js»: se guarda acá, en aventura/js/mundo/, y el mundo lo aplica al armarse.\n") +
+      "window.AGREGADOS = {\n  nombre: " + JSON.stringify(est.nombre || "") + ",\n" + (est.lienzo ? "  lienzo: true,\n  mapaId: " + JSON.stringify(est.mapaId) + ",\n" : "") + "  poner: [" + lineas(est.poner) + "],\n  quitar: [" + lineas(est.quitar) + "],\n  mover: [" + lineas(est.mover) + "],\n  quitarDeco: [" + lineas(est.quitarDeco) + "],\n  caminos: [" + lineas(est.caminos) + "],\n  quitarCaminos: [" + est.quitarCaminos.join(", ") + "],\n  estiloCaminos: [" + lineas(est.estiloCaminos) + "],\n  rios: [" + lineas(est.rios) + "],\n  lagos: [" + lineas(est.lagos) + "],\n  quitarRios: [" + est.quitarRios.join(", ") + "],\n  quitarLagos: [" + est.quitarLagos.join(", ") + "],\n  estiloRios: [" + lineas(est.estiloRios) + "],\n  estiloLagos: [" + lineas(est.estiloLagos) + "],\n  // los interiores cambiados (pestaña Interiores): plantilla → pared, ventana, cambios por mueble y muebles puestos\n  cuartos: " + JSON.stringify(est.cuartos || {}) + ",\n  // casas de varios cuartos (generador de casas): cuartos, uniones y pasadizos; cada cuarto es la plantilla plano:<id>:<n>\n  casas: " + JSON.stringify(est.casas || {}) + ",\n  // zonas fuera del mapa (sección Zonas): mazmorras oscuras y tierras con islas, cada una con su entrada en el bosque\n  zonas: " + JSON.stringify(est.zonas || {}) + ",\n  // gente propia (Importar NPC): nombre, diálogo, lugar y sus dibujos por vista (imágenes achicadas)\n  npcs: [" + lineas(est.npcs || []) + "],\n  // imágenes importadas (estructuras, pinturas de pared y calcos en el piso): cada una es el asset im_<id>\n  imagenes: " + JSON.stringify(est.imagenes || {}) + ",\n  // regiones con nombre (el juego lo muestra al entrar) y piezas guardadas para reusar en el editor\n  regiones: [" + lineas(est.regiones || []) + "],\n  piezas: " + JSON.stringify(est.piezas || {}) + ",\n  // texturas hechas en el editor (generador de texturas): cada una es un asset tx_<id> (parche) o txb_<id> (bloque)\n  texturas: " + JSON.stringify(est.texturas || {}) + ",\n  // capas propias del editor (el juego las dibuja todas): id, nombre, prendida, trabada\n  capas: " + JSON.stringify(est.capas || []) + ",\n  capaSuelta: " + JSON.stringify(est.capaSuelta || {}) + ",\n  capaActiva: " + JSON.stringify(est.capaActiva || "") + ",\n  // notas para Claude: qué hacer en ese lugar (el juego no las usa)\n  notas: [" + lineas(est.notas) + "],\n};\n" +
+      (est.lienzo ? "" : "// ?borrador=1: el juego usa lo que está armado en el editor de este navegador, sin descargar nada\n" +
+      "try {\n  if (/[?&]borrador=1/.test(location.search)) {\n    const b = JSON.parse(localStorage.getItem(\"" + CLAVE + "\") || \"null\");\n    if (b && b.poner) window.AGREGADOS = b;\n  }\n} catch (e) {}\n")
     );
   }
+  // un mapa de cero se baja con su nombre (mapas/<mapaId>.js); el de Eldervald es agregados.js
+  const archivoMapa = () => (est.lienzo ? est.mapaId + ".js" : "agregados.js");
   $("bGuardarJuego").onclick = () => window.EDITOR_GITHUB && EDITOR_GITHUB.abrir();
   $("bDescargar").onclick = () => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([texto()], { type: "text/javascript" }));
-    a.download = "agregados.js";
+    a.download = archivoMapa();
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     bajado = huella();
@@ -3152,7 +3171,7 @@
     if (!confirm(t("ed.limpiar_seguro"))) return;
     recordar();
     // las piezas son la biblioteca de este navegador: limpiar el mapa no las borra
-    est = { poner: [], quitar: [], mover: [], quitarDeco: [], caminos: [], quitarCaminos: [], estiloCaminos: [], rios: [], lagos: [], quitarRios: [], quitarLagos: [], estiloRios: [], estiloLagos: [], notas: [], piezas: est.piezas || {}, texturas: est.texturas || {}, casas: est.casas || {}, zonas: est.zonas || {}, npcs: est.npcs || [], imagenes: est.imagenes || {} };
+    est = { poner: [], quitar: [], mover: [], quitarDeco: [], caminos: [], quitarCaminos: [], estiloCaminos: [], rios: [], lagos: [], quitarRios: [], quitarLagos: [], estiloRios: [], estiloLagos: [], notas: [], piezas: est.piezas || {}, texturas: est.texturas || {}, casas: est.casas || {}, zonas: est.zonas || {}, npcs: est.npcs || [], imagenes: est.imagenes || {}, nombre: est.nombre, lienzo: est.lienzo, mapaId: est.mapaId };
     guardar();
   };
 
@@ -3210,6 +3229,9 @@
     },
     // el texto de agregados.js tal cual se descarga (lo sube «Guardar en el juego») y marcarlo como ya bajado
     textoAgregados: () => texto(),
+    // un proyecto de cero (proyectos.js): el mundo de base no está y se guarda en mapas/<mapaId>.js
+    lienzo: () => !!est.lienzo,
+    archivoMapa: () => archivoMapa(),
     marcarBajado: () => {
       bajado = huella();
       try {

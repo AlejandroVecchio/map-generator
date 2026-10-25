@@ -7,8 +7,9 @@ window.EDITOR_GITHUB = (function () {
   const E = window.EDITOR,
     t = E.t,
     $ = (id) => document.getElementById(id);
-  const CLAVE = "eromash-editor-github",
-    ARCHIVO = "aventura/js/mundo/agregados.js";
+  const CLAVE = "eromash-editor-github";
+  // Eldervald va en agregados.js; un mapa de cero (proyectos.js) va en su propio archivo de mapas/
+  const archivo = () => (E.lienzo() ? "aventura/js/mundo/mapas/" : "aventura/js/mundo/") + E.archivoMapa();
   let conf = { repo: "AlejandroVecchio/eromash-aventura-web", clave: "" };
   try {
     Object.assign(conf, JSON.parse(localStorage.getItem(CLAVE) || "{}"));
@@ -100,11 +101,11 @@ window.EDITOR_GITHUB = (function () {
       estado(t("ed.gh_paso_archivo"));
       let sha;
       try {
-        sha = (await api("/contents/" + ARCHIVO + "?ref=" + encodeURIComponent(rama))).sha;
+        sha = (await api("/contents/" + archivo() + "?ref=" + encodeURIComponent(rama))).sha;
       } catch (e) {}
-      await api("/contents/" + ARCHIVO, { method: "PUT", body: { message: mensaje, content: base64(E.textoAgregados()), branch: rama, sha } });
+      await api("/contents/" + archivo(), { method: "PUT", body: { message: mensaje, content: base64(E.textoAgregados()), branch: rama, sha } });
       estado(t("ed.gh_paso_pr"));
-      const pr = await api("/pulls", { method: "POST", body: { title: mensaje, head: rama, base, body: t("ed.gh_cuerpo") } });
+      const pr = await api("/pulls", { method: "POST", body: { title: mensaje, head: rama, base, body: E.lienzo() ? t("ed.gh_cuerpo_mapa", [E.archivoMapa().replace(/\.js$/, "")]) : t("ed.gh_cuerpo") } });
       E.marcarBajado();
       estado("", "");
       const a = document.createElement("a");

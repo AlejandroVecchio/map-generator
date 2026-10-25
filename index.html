@@ -195,6 +195,21 @@
   #ghPanel .listo { background: #9C2315; border-color: #C8402D; }
   #ghPanel button[disabled] { opacity: .45; }
   body.foco #ghPanel { right: 12px; }
+  #prPanel { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 120px); overflow: auto; background: #1C1714; border: 1px solid #FFD98A; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; z-index: 21; }
+  #prPanel .cab { display: flex; justify-content: space-between; align-items: center; }
+  #prPanel b { color: #FFD98A; }
+  #prPanel label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: #E0B2B2; }
+  #prPanel input { font: inherit; font-size: 13px; background: #111111; color: #F2ECEC; border: 1px solid #4A3630; padding: 6px 8px; }
+  #prPanel small { color: #B5A5A0; font-size: 12px; line-height: 1.4; }
+  #prPanel .botones { display: flex; flex-wrap: wrap; gap: 6px; }
+  #prPanel .listo { background: #9C2315; border-color: #C8402D; }
+  #prLista { display: flex; flex-direction: column; gap: 6px; }
+  .prFila { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; background: #241A17; border-left: 4px solid #4A3630; padding: 6px 8px; }
+  .prFila.abierto { border-left-color: #FFD98A; }
+  .prFila > div:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .prFila b { color: #F2ECEC !important; overflow-wrap: anywhere; }
+  .prBotones { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+  .prBotones span { color: #FFD98A; font-size: 12px; padding: 0 6px; }
   #iaVarias { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #3A2A26; padding-top: 8px; }
   #iaVarias > b { color: #73D5DB; font-size: 13px; }
   #iaVariasLista, #boVariasLista { display: flex; flex-direction: column; gap: 6px; max-height: 34vh; overflow: auto; }
@@ -438,7 +453,7 @@
     <div id="lista"></div>
     </div>
     <div id="ladoCapas" class="oculto">
-      <div class="cpCab"><b data-i18n="ed.cp_propias"></b><button id="cpNueva" data-i18n="ed.cp_nueva"></button></div>
+      <div class="cpCab"><b data-i18n="ed.cp_propias"></b><span><button id="cpMapa" data-i18n="ed.pr_capa_corto"></button> <button id="cpNueva" data-i18n="ed.cp_nueva"></button></span></div>
       <div id="cpLista"></div>
       <small class="cpAyuda" data-i18n="ed.cp_ayuda"></small>
       <div class="cpCab"><b data-i18n="ed.cp_mundo"></b></div>

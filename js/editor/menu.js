@@ -36,6 +36,11 @@ window.EDITOR_MENU = (function () {
   // [clave de texto, tecla, qué hace | { sub }, marca?]; "-" separa
   const MENUS = [
     ["ed.mn_archivo", [
+      ["ed.pr_menu_nuevo", "", () => window.EDITOR_PROYECTOS && EDITOR_PROYECTOS.abrir(true)],
+      ["ed.pr_menu", "", () => window.EDITOR_PROYECTOS && EDITOR_PROYECTOS.abrir()],
+      ["ed.pr_menu_abrir", "", { sub: () => (window.EDITOR_PROYECTOS ? EDITOR_PROYECTOS.lista().map((p) => ({ nom: (p.nombre || t(p.lienzo ? "ed.pr_sin_nombre" : "ed.pr_eldervald")) + (p.lienzo ? " · " + t("ed.pr_tipo_blanco") : ""), hacer: () => EDITOR_PROYECTOS.abrirProyecto(p.id), marca: () => p.id === EDITOR_PROYECTOS.activo() })) : []) }],
+      ["ed.pr_capa", "", () => window.EDITOR_PROYECTOS && EDITOR_PROYECTOS.enCapa()],
+      "-",
       ["ed.limpiar", "", clic("bLimpiar")],
       ["ed.cargar", "", clic("bCargar")],
       ["ed.mn_borradores", "", { sub: () => [{ nom: t("ed.borrador_guardar"), hacer: clic("bBorrador") }, "-"].concat(deSelect("borradores", true)()) }],
@@ -180,7 +185,7 @@ window.EDITOR_MENU = (function () {
   // a la derecha: el nombre del plano y la capa activa
   function pintarDer() {
     const c = E.capas.lista().find((q) => q.id === E.capas.activa());
-    der.textContent = ($("planoNombre").value ? $("planoNombre").value + " · " : "") + t("ed.cp_capa") + ": " + (c ? c.nom : t("ed.cp_sueltos"));
+    der.textContent = ($("planoNombre").value ? $("planoNombre").value + " · " : "") + (E.lienzo() ? t("ed.pr_tipo_blanco") + " · " : "") + t("ed.cp_capa") + ": " + (c ? c.nom : t("ed.cp_sueltos"));
   }
 
   // ---------- los desplegables ----------

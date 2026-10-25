@@ -67,7 +67,7 @@
     ["js/mundo/eldervald.js", "js/mundo/agregados.js"],
   ];
   const DESPUES = ["js/motor/interiores.js", "js/motor/regiones.js", "js/motor/zonas.js"];
-  const EDITOR = ["editor", "comandos", "ia", "github", "cuartos", "mundo", "pincel", "historia", "texturas", "zonas", "npcs", "importar", "boceto", "capas", "menu"];
+  const EDITOR = ["editor", "comandos", "ia", "github", "proyectos", "cuartos", "mundo", "pincel", "historia", "texturas", "zonas", "npcs", "importar", "boceto", "capas", "menu"];
   function armar(lista) {
     lista = lista.filter((s) => s !== "js/catalogo.js");
     EXTRA.forEach(([s, antes, despues]) => {
@@ -77,6 +77,8 @@
       if (i < 0) return lista.push(s);
       lista.splice(despues ? i + 1 : i, 0, s);
     });
+    // el proyecto abierto, justo antes de armar el mundo: si es un mapa de cero, Eldervald se arma vacío
+    lista.splice(lista.indexOf("js/mundo/eldervald.js"), 0, PROPIO + "js/proyecto.js");
     // los textos del editor van con los demás textos (antes que cualquier asset)
     const ultTexto = lista.reduce((k, s, i) => (s.startsWith("js/textos/") ? i : k), 0);
     lista.splice(ultTexto + 1, 0, PROPIO + "js/textos/editor.js");

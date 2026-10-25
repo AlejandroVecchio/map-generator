@@ -165,6 +165,8 @@ window.EDITOR_CAPAS = (function () {
     filaCapa(Object.assign({ id: "" }, C.suelta()), n, activa, deEleg).forEach((el) => caja.appendChild(el));
     pintarBase();
   }
+  $("cpMapa").title = t("ed.pr_capa_t");
+  $("cpMapa").onclick = () => window.EDITOR_PROYECTOS && EDITOR_PROYECTOS.enCapa();
   $("cpNueva").onclick = () => {
     C.nueva();
     abierta = null;
