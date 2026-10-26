@@ -12,6 +12,7 @@
   const $ = (id) => document.getElementById(id);
   document.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n)));
   document.querySelectorAll("[data-i18n-ph]").forEach((el) => (el.placeholder = t(el.dataset.i18nPh)));
+  document.querySelectorAll("[data-i18n-label]").forEach((el) => (el.label = t(el.dataset.i18nLabel)));
   $("buscar").placeholder = t("ed.buscar");
   const CLAVE = "eromash-aventura-editor";
 
@@ -534,11 +535,19 @@
       W.dibujarPiso(c, x0, y0, x1, y1, cam.z < 0.5 ? 0.2 : 0.5);
     }
     // los caminos ya van en el piso (W.CAMINOS, ver aplicarCaminos); acá solo el que se está trazando
-    if (camino && cursor) SENDAS.pintar(c, Object.assign({}, camino, { p: camino.p.concat([[cursor.x, cursor.y]]) }), 999, x0, y0, x1, y1, null, W.CAMINOS);
+    if (camino && cursor) {
+      const tr = Object.assign({}, camino, { p: camino.p.concat([[cursor.x, cursor.y]]) });
+      SENDAS.pintar(c, tr, 999, x0, y0, x1, y1, null, W.CAMINOS);
+      if (SENDAS.pintarPuentes) SENDAS.pintarPuentes(c, W.CAMINOS, x0, y0, x1, y1, tr);
+    }
     if (caminoElegido()) {
       const cm0 = caminoElegido(),
         cm = sel && sel.vertice != null ? Object.assign({}, cm0, { p: sel.p }) : cm0;
-      if (sel && sel.vertice != null) SENDAS.pintar(c, cm, cm.sem || 0, x0, y0, x1, y1, null, W.CAMINOS.map((o) => (o === cm0 ? cm : o)));
+      if (sel && sel.vertice != null) {
+        const otros = W.CAMINOS.map((o) => (o === cm0 ? cm : o));
+        SENDAS.pintar(c, cm, cm.sem || 0, x0, y0, x1, y1, null, otros);
+        if (SENDAS.pintarPuentes) SENDAS.pintarPuentes(c, otros, x0, y0, x1, y1, cm);
+      }
       // el tramo elegido, resaltado
       if (tramoSel != null && cm.p[tramoSel + 1]) {
         c.save();
@@ -3378,7 +3387,7 @@
         est.poner.push(n);
         nuevos.push(n);
       });
-      (ops.caminos || []).forEach((cm) => est.caminos.push(cc({ p: cm.p.map(rp), w: r1(cm.w || 110), tipo: cm.tipo || "tierra", borde: cm.borde || "pasto", fundir: !!cm.fundir })));
+      (ops.caminos || []).forEach((cm) => est.caminos.push(cc({ p: cm.p.map(rp), w: r1(cm.w || 110), tipo: cm.tipo || "tierra", borde: cm.borde || "pasto", fundir: !!cm.fundir, tramos: Array.isArray(cm.tramos) ? cm.tramos : undefined })));
       // agua nueva (el boceto): ríos { p, w } y lagunas { x, y, rx, ry }
       (ops.rios || []).forEach((rr) => est.rios.push(cc({ p: rr.p.map(rp), w: r1(rr.w || 300) })));
       (ops.lagos || []).forEach((l) => est.lagos.push(cc({ x: r1(l.x), y: r1(l.y), rx: r1(l.rx), ry: r1(l.ry) })));
