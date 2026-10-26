@@ -44,6 +44,7 @@
     "js/mundo/assets-sotanos.js",
     "js/mundo/assets-casas.js",
     "js/mundo/assets-zonas.js",
+    "js/mundo/assets-mazmorras.js",
     "js/mundo/assets-berkano.js",
     "js/historia/guion.js",
     "js/mundo/caminos.js",
@@ -55,6 +56,7 @@
     "js/mundo/imagenes.js",
     "js/motor/interiores.js",
     "js/motor/regiones.js",
+    "js/motor/mazmorras.js",
     "js/motor/zonas.js",
   ];
   // lo que el editor necesita y el catálogo no carga, con antes de qué va
@@ -69,7 +71,7 @@
   ];
   // Eikholt (la capital es otro mapa): el plano, sus piezas, lo del editor (ciudad/agregados.js) y la vista del juego
   const CIUDAD = ["casas", "puestos", "muralla", "roble", "ting", "enseres", "oficios", "porton", "plano", "agregados", "vista"].map((n) => "js/ciudad/" + n + ".js");
-  const DESPUES = ["js/motor/interiores.js", "js/motor/regiones.js", "js/motor/zonas.js"].concat(CIUDAD);
+  const DESPUES = ["js/motor/interiores.js", "js/motor/regiones.js", "js/motor/mazmorras.js", "js/motor/zonas.js"].concat(CIUDAD);
   const EDITOR = ["editor", "comandos", "ia", "github", "proyectos", "cuartos", "mundo", "pincel", "historia", "texturas", "zonas", "eikholt", "npcs", "importar", "boceto", "capas", "menu"];
   function armar(lista) {
     lista = lista.filter((s) => s !== "js/catalogo.js");

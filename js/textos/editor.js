@@ -513,6 +513,7 @@ I18N.textos({
   "ed.zn_ir": { es: "Ir", en: "Go" },
   "ed.zn_jefe": { es: "Jefe", en: "Boss" },
   "ed.zn_familia": { es: "Criaturas", en: "Creatures" },
+  "ed.zn_estilo": { es: "Estilo", en: "Style" },
   "ed.zn_pal0": { es: "Color 1", en: "Colour 1" },
   "ed.zn_pal1": { es: "Color 2", en: "Colour 2" },
   "ed.zn_pal2": { es: "Color 3", en: "Colour 3" },

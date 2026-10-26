@@ -484,6 +484,8 @@ window.EDITOR_ZONAS = (function () {
   // ---------- el panel ----------
   const FAM = Z.FAMILIAS;
   $("znFamilia").innerHTML = FAM.map((f) => `<option value="${f}">${t("ed.zn_fam_" + f)}</option>`).join("");
+  const ESTILOS = Z.ESTILOS || ["cripta"];
+  $("znEstilo").innerHTML = ESTILOS.map((e) => `<option value="${e}">${t("zn.estilo_" + e)}</option>`).join("");
   $("znJefe").innerHTML = ["dreki", "campeon", ""].map((j) => `<option value="${j}">${t("ed.zn_jefe_" + (j || "nada"))}</option>`).join("");
   $("znSelClase").innerHTML = CLASES.map((s) => `<option value="${s}">${t("ed.zn_sala_" + s)}</option>`).join("");
   $("znSelCosa").innerHTML = COSAS.map((s) => `<option value="${s}">${t("ed.zn_cosa_" + s)}</option>`).join("");
@@ -544,6 +546,7 @@ window.EDITOR_ZONAS = (function () {
     $("znBorrar").disabled = a.base && !ok;
     if (ok && d.tipo === "mazmorra") {
       $("znFamilia").value = d.familia;
+      $("znEstilo").value = (window.MAZMORRAS && MAZMORRAS.estiloDe(d)) || d.estilo || "cripta";
       $("znJefe").value = d.jefe || "";
       $("znPal").value = d.pal || 0;
     }
@@ -592,6 +595,7 @@ window.EDITOR_ZONAS = (function () {
     if (v) cambiar((z) => (z.nombre = v));
   });
   $("znFamilia").addEventListener("change", () => cambiar((z) => (z.familia = $("znFamilia").value)));
+  $("znEstilo").addEventListener("change", () => cambiar((z) => (z.estilo = $("znEstilo").value)));
   $("znJefe").addEventListener("change", () => cambiar((z) => (z.jefe = $("znJefe").value || null)));
   $("znPal").addEventListener("change", () => cambiar((z) => (z.pal = +$("znPal").value)));
   $("znBosque").addEventListener("change", () => cambiar((z) => (z.bosque = +$("znBosque").value)));
@@ -851,7 +855,9 @@ window.EDITOR_ZONAS = (function () {
       "Convertís el pedido de una zona de un juego vikingo en JSON, solo JSON, sin texto alrededor. Hay dos clases de zona. " +
       'Mazmorra: {"tipo": "mazmorra", "nombre": texto corto en el idioma del pedido, "salas": 3 a 14, "jefe": "dreki" (dragón) o "campeon" o null, "familia": una de ' +
       FAM.join(", ") +
-      ', "oscuras": 0 a 1 (cuántas salas sin antorchas)}. ' +
+      ', "oscuras": 0 a 1 (cuántas salas sin antorchas), "estilo": una de ' +
+      ESTILOS.join(", ") +
+      ' (cripta de piedra, cueva con estalactitas, mina con vigas, hielo, raíces del bosque, brasas con lava)}. ' +
       'Tierra: {"tipo": "tierra", "nombre": texto corto, "grande": true si hay una tierra grande, "islas": 0 a 8, "rasgos": [{"cosa": una de ' +
       Z.COSAS.join(", ") +
       ', "donde": "isla" o "tierra", "familia": para un campamento, una de las familias, "mazmorra": solo para una cueva que lleva a una mazmorra: {"jefe": "dreki" o "campeon", "familia": una familia, "oscuras": 0 a 1}}]}.';
@@ -863,7 +869,7 @@ window.EDITOR_ZONAS = (function () {
       const leido = Z.leerPedido(txt);
       let p;
       if (js.tipo === "mazmorra")
-        p = { tipo: "mazmorra", salas: Math.max(3, Math.min(14, +js.salas || leido.salas || 8)), jefe: js.jefe === "dreki" || js.jefe === "campeon" ? js.jefe : null, familia: FAM.includes(js.familia) ? js.familia : leido.familia, oscuras: js.oscuras != null ? Math.max(0, Math.min(1, +js.oscuras)) : undefined };
+        p = { tipo: "mazmorra", salas: Math.max(3, Math.min(14, +js.salas || leido.salas || 8)), jefe: js.jefe === "dreki" || js.jefe === "campeon" ? js.jefe : null, familia: FAM.includes(js.familia) ? js.familia : leido.familia, oscuras: js.oscuras != null ? Math.max(0, Math.min(1, +js.oscuras)) : undefined, estilo: ESTILOS.includes(js.estilo) ? js.estilo : leido.estilo };
       else
         p = {
           tipo: "tierra",
