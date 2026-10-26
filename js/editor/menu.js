@@ -121,6 +121,7 @@ window.EDITOR_MENU = (function () {
       "-",
       ["ed.cu_titulo", "9", clic("hInteriores")],
       ["ed.zn_titulo", "M", clic("hZonas")],
+      ["ed.ek_titulo", "J", clic("hEikholt")],
       ["ed.tx_titulo", "Y", clic("hTexturas")],
       ["ed.im_titulo", "N", clic("hNpc")],
       ["ed.mn_piezas", "", { sub: deSelect("piezas", true) }],

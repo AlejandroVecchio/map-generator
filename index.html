@@ -288,6 +288,26 @@
   /* los interiores: el cuarto de frente a la izquierda, su panel a la derecha */
   #cuartos { position: fixed; inset: 0; z-index: 30; display: grid; grid-template-columns: minmax(0, 1fr) 320px; background: #0A0606; }
   #cuartos.oculto { display: none; }
+  /* Eikholt: la ciudad a la izquierda, su panel a la derecha */
+  #eikholt { position: fixed; inset: 0; z-index: 30; display: grid; grid-template-columns: minmax(0, 1fr) 320px; background: #0A0606; }
+  #eikholt.oculto { display: none; }
+  #ekLienzo { width: 100%; height: 100%; display: block; touch-action: none; cursor: pointer; }
+  #eikholt aside { overflow: auto; background: #111111; border-left: 1px solid #3A2A26; }
+  #eikholt aside header { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 16px; }
+  #eikholt small { display: block; padding: 2px 16px; color: #B5A5A0; font-size: 12px; line-height: 1.35; }
+  #eikholt .botones3, #eikholt .botones4 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px 16px; }
+  #eikholt .botones4 { grid-template-columns: repeat(4, 1fr); }
+  #eikholt .listo { background: #9C2315; border-color: #C8402D; }
+  #eikholt .fila select, #eikholt .fila input[type=text] { flex: 1; min-width: 0; }
+  #eikholt input[type=text] { font: inherit; font-size: 13px; background: #181311; color: #F2ECEC; border: 1px solid #4A3630; padding: 6px; }
+  #ekLugares { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 16px; }
+  #ekLugares button { font-size: 12px; padding: 3px 6px; }
+  #ekSel { margin: 6px 12px; padding: 8px 4px; border: 1px solid #73D5DB; }
+  #ekSel b { padding: 0 12px; color: #73D5DB; }
+  #ekLista { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 6px 16px 16px; }
+  .ekObj { font-size: 12px; text-align: left; padding: 5px 6px; background: #241A17; border: 1px solid #3A2A26; color: #E0B2B2; }
+  .ekObj.elegido { border-color: #FFD98A; color: #FFD98A; }
+  @media (max-width: 760px) { #eikholt { grid-template-columns: 1fr; grid-template-rows: 55% 45%; } }
   #zonas { position: fixed; inset: 0; z-index: 30; display: grid; grid-template-columns: minmax(0, 1fr) 340px; background: #0A0606; }
   #zonas.oculto { display: none; }
   #znLienzo { width: 100%; height: 100%; touch-action: none; cursor: pointer; }
@@ -491,7 +511,7 @@
       <div id="escondidos" class="oculto">
         <button id="hIA" data-i18n="ed.ia"></button><button id="hComandos" data-i18n="ed.comandos"></button>
         <button id="hInteriores" data-i18n="ed.interiores"></button><button id="hTexturas" data-i18n="ed.texturas"></button>
-        <button id="hZonas" data-i18n="ed.zonas"></button><button id="hNpc" data-i18n="ed.importar"></button><button id="hBoceto" data-i18n="ed.bo_boton"></button>
+        <button id="hZonas" data-i18n="ed.zonas"></button><button id="hEikholt" data-i18n="ed.ek_boton"></button><button id="hNpc" data-i18n="ed.importar"></button><button id="hBoceto" data-i18n="ed.bo_boton"></button>
         <button id="bRevisar" data-i18n="ed.revisar"></button><button id="bCopiar" data-i18n="ed.copiar"></button><button id="bAtajos" data-i18n="ed.atajos_b"></button>
         <button id="bBorrador" data-i18n="ed.borrador_guardar"></button><select id="borradores"></select>
         <button id="bPieza" data-i18n="ed.pieza_guardar"></button><select id="piezas"></select>
@@ -538,6 +558,26 @@
     </div>
     <div class="grupo" style="padding: 0 16px" data-i18n="ed.cu_muebles"></div>
     <div id="cuLista"></div>
+  </aside>
+</div>
+<div id="eikholt" class="oculto">
+  <canvas id="ekLienzo"></canvas>
+  <aside>
+    <header><h1 data-i18n="ed.ek_titulo"></h1><button id="ekCerrar" data-i18n="ed.cu_volver"></button></header>
+    <small data-i18n="ed.ek_intro"></small>
+    <div class="grupo" style="padding: 0 16px" data-i18n="ed.ek_ir"></div>
+    <div id="ekLugares"></div>
+    <div class="botones4"><button id="ekCamIzq" data-i18n="ed.ek_cam_izq"></button><button id="ekCamDer" data-i18n="ed.ek_cam_der"></button><button id="ekAcercar" data-i18n="ed.ek_acercar"></button><button id="ekAlejar" data-i18n="ed.ek_alejar"></button></div>
+    <div id="ekSel" class="oculto">
+      <b id="ekSelNombre"></b><small id="ekSelTipo"></small>
+      <div class="botones3"><button id="ekGiroIzq" data-i18n="ed.ek_girar_izq"></button><button id="ekGiroDer" data-i18n="ed.ek_girar_der"></button><button id="ekSacar" data-i18n="ed.sel_sacar"></button></div>
+      <div class="botones3"><button id="ekMenos" data-i18n="ed.ek_menos"></button><button id="ekMas" data-i18n="ed.ek_mas"></button><button id="ekComo" data-i18n="ed.sel_como"></button></div>
+    </div>
+    <div class="fila"><small id="ekCuenta"></small></div>
+    <div class="botones3"><button id="ekDevolver" data-i18n="ed.ek_devolver"></button><button id="ekTodo" data-i18n="ed.ek_todo"></button><button id="ekProbar" class="listo" data-i18n="ed.ek_probar"></button></div>
+    <div class="grupo" style="padding: 0 16px" data-i18n="ed.ek_poner"></div>
+    <div class="fila"><select id="ekGrupo"></select><input id="ekBuscar" type="text" data-i18n-ph="ed.ek_buscar" /></div>
+    <div id="ekLista"></div>
   </aside>
 </div>
 <div id="zonas" class="oculto">

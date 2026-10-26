@@ -2440,6 +2440,7 @@
   $("selSacar").onclick = () => sacarElegidos();
   $("hComandos").onclick = () => window.EDITOR_COMANDOS && EDITOR_COMANDOS.abrir();
   $("hInteriores").onclick = () => window.EDITOR_CUARTOS && EDITOR_CUARTOS.abrir();
+  $("hEikholt").onclick = () => window.EDITOR_EIKHOLT && EDITOR_EIKHOLT.abrir();
 
   // ---------- copiar, pegar y duplicar (Ctrl+C, Ctrl+V, Ctrl+D) ----------
   // Lo copiado queda en este navegador, así se pega también en otra zona o después de recargar.
@@ -2867,6 +2868,12 @@
       if (ctrl && e.key.toLowerCase() === "y") return e.preventDefault(), rehacer();
       return EDITOR_ZONAS.tecla(e);
     }
+    // con Eikholt abierta, lo mismo
+    if (window.EDITOR_EIKHOLT && EDITOR_EIKHOLT.abierta()) {
+      if (ctrl && e.key.toLowerCase() === "z") return e.preventDefault(), e.shiftKey ? rehacer() : deshacer();
+      if (ctrl && e.key.toLowerCase() === "y") return e.preventDefault(), rehacer();
+      return EDITOR_EIKHOLT.tecla(e);
+    }
     // las teclas que no llaman a una acción con nombre también enseñan qué se usa después de qué
     const k = e.key.toLowerCase(),
       regionAbierta = window.EDITOR_MUNDO && EDITOR_MUNDO.trazando(),
@@ -2878,6 +2885,7 @@
     if (window.EDITOR_BOCETO && EDITOR_BOCETO.tecla(e)) return e.preventDefault();
     if (window.EDITOR_CAPAS && EDITOR_CAPAS.tecla(e)) return e.preventDefault();
     if ((e.key === "m" || e.key === "M") && !ctrl) return window.EDITOR_ZONAS && EDITOR_ZONAS.abrir();
+    if ((e.key === "j" || e.key === "J") && !ctrl) return window.EDITOR_EIKHOLT && EDITOR_EIKHOLT.abrir();
     if ((e.key === "n" || e.key === "N") && !ctrl) return window.EDITOR_NPC && EDITOR_NPC.alternar();
     if (e.key === "9" && !ctrl) return window.EDITOR_CUARTOS && EDITOR_CUARTOS.abrir(elegida && window.INTERIORES ? INTERIORES.plantillaDe(elegida.a ? elegida.a.id : elegida.cosa.id, opcionesElegida(), (elegida.a || elegida.cosa).x, (elegida.a || elegida.cosa).y) : null);
     // marcadores: Shift+número vuelve, Ctrl+Shift+número guarda
@@ -3092,7 +3100,7 @@
           "// y se juega con index.html?mapa=" + est.mapaId + "&jugar=9. El mundo de base no se arma: solo lo de este archivo.\n"
         : "// Lo que se agregó o se sacó del mundo con el editor de Eldervald (repo map-generator). Este archivo lo escribe el editor\n" +
           "// con «Descargar agregados.js»: se guarda acá, en aventura/js/mundo/, y el mundo lo aplica al armarse.\n") +
-      "window.AGREGADOS = {\n  nombre: " + JSON.stringify(est.nombre || "") + ",\n" + (est.lienzo ? "  lienzo: true,\n  mapaId: " + JSON.stringify(est.mapaId) + ",\n" : "") + "  poner: [" + lineas(est.poner) + "],\n  quitar: [" + lineas(est.quitar) + "],\n  mover: [" + lineas(est.mover) + "],\n  quitarDeco: [" + lineas(est.quitarDeco) + "],\n  caminos: [" + lineas(est.caminos) + "],\n  quitarCaminos: [" + est.quitarCaminos.join(", ") + "],\n  estiloCaminos: [" + lineas(est.estiloCaminos) + "],\n  rios: [" + lineas(est.rios) + "],\n  lagos: [" + lineas(est.lagos) + "],\n  quitarRios: [" + est.quitarRios.join(", ") + "],\n  quitarLagos: [" + est.quitarLagos.join(", ") + "],\n  estiloRios: [" + lineas(est.estiloRios) + "],\n  estiloLagos: [" + lineas(est.estiloLagos) + "],\n  // los interiores cambiados (pestaña Interiores): plantilla → pared, ventana, cambios por mueble y muebles puestos\n  cuartos: " + JSON.stringify(est.cuartos || {}) + ",\n  // casas de varios cuartos (generador de casas): cuartos, uniones y pasadizos; cada cuarto es la plantilla plano:<id>:<n>\n  casas: " + JSON.stringify(est.casas || {}) + ",\n  // zonas fuera del mapa (sección Zonas): mazmorras oscuras y tierras con islas, cada una con su entrada en el bosque\n  zonas: " + JSON.stringify(est.zonas || {}) + ",\n  // gente propia (Importar NPC): nombre, diálogo, lugar y sus dibujos por vista (imágenes achicadas)\n  npcs: [" + lineas(est.npcs || []) + "],\n  // imágenes importadas (estructuras, pinturas de pared y calcos en el piso): cada una es el asset im_<id>\n  imagenes: " + JSON.stringify(est.imagenes || {}) + ",\n  // regiones con nombre (el juego lo muestra al entrar) y piezas guardadas para reusar en el editor\n  regiones: [" + lineas(est.regiones || []) + "],\n  piezas: " + JSON.stringify(est.piezas || {}) + ",\n  // texturas hechas en el editor (generador de texturas): cada una es un asset tx_<id> (parche) o txb_<id> (bloque)\n  texturas: " + JSON.stringify(est.texturas || {}) + ",\n  // capas propias del editor (el juego las dibuja todas): id, nombre, prendida, trabada\n  capas: " + JSON.stringify(est.capas || []) + ",\n  capaSuelta: " + JSON.stringify(est.capaSuelta || {}) + ",\n  capaActiva: " + JSON.stringify(est.capaActiva || "") + ",\n  // notas para Claude: qué hacer en ese lugar (el juego no las usa)\n  notas: [" + lineas(est.notas) + "],\n};\n" +
+      "window.AGREGADOS = {\n  nombre: " + JSON.stringify(est.nombre || "") + ",\n" + (est.lienzo ? "  lienzo: true,\n  mapaId: " + JSON.stringify(est.mapaId) + ",\n" : "") + "  poner: [" + lineas(est.poner) + "],\n  quitar: [" + lineas(est.quitar) + "],\n  mover: [" + lineas(est.mover) + "],\n  quitarDeco: [" + lineas(est.quitarDeco) + "],\n  caminos: [" + lineas(est.caminos) + "],\n  quitarCaminos: [" + est.quitarCaminos.join(", ") + "],\n  estiloCaminos: [" + lineas(est.estiloCaminos) + "],\n  rios: [" + lineas(est.rios) + "],\n  lagos: [" + lineas(est.lagos) + "],\n  quitarRios: [" + est.quitarRios.join(", ") + "],\n  quitarLagos: [" + est.quitarLagos.join(", ") + "],\n  estiloRios: [" + lineas(est.estiloRios) + "],\n  estiloLagos: [" + lineas(est.estiloLagos) + "],\n  // los interiores cambiados (pestaña Interiores): plantilla → pared, ventana, cambios por mueble y muebles puestos\n  cuartos: " + JSON.stringify(est.cuartos || {}) + ",\n  // casas de varios cuartos (generador de casas): cuartos, uniones y pasadizos; cada cuarto es la plantilla plano:<id>:<n>\n  casas: " + JSON.stringify(est.casas || {}) + ",\n  // zonas fuera del mapa (sección Zonas): mazmorras oscuras y tierras con islas, cada una con su entrada en el bosque\n  zonas: " + JSON.stringify(est.zonas || {}) + ",\n  // Eikholt cambiada (pestaña Eikholt): cosas del plano sacadas o movidas y assets puestos (ciudad/agregados.js)\n  eikholt: " + JSON.stringify(est.eikholt || {}) + ",\n  // gente propia (Importar NPC): nombre, diálogo, lugar y sus dibujos por vista (imágenes achicadas)\n  npcs: [" + lineas(est.npcs || []) + "],\n  // imágenes importadas (estructuras, pinturas de pared y calcos en el piso): cada una es el asset im_<id>\n  imagenes: " + JSON.stringify(est.imagenes || {}) + ",\n  // regiones con nombre (el juego lo muestra al entrar) y piezas guardadas para reusar en el editor\n  regiones: [" + lineas(est.regiones || []) + "],\n  piezas: " + JSON.stringify(est.piezas || {}) + ",\n  // texturas hechas en el editor (generador de texturas): cada una es un asset tx_<id> (parche) o txb_<id> (bloque)\n  texturas: " + JSON.stringify(est.texturas || {}) + ",\n  // capas propias del editor (el juego las dibuja todas): id, nombre, prendida, trabada\n  capas: " + JSON.stringify(est.capas || []) + ",\n  capaSuelta: " + JSON.stringify(est.capaSuelta || {}) + ",\n  capaActiva: " + JSON.stringify(est.capaActiva || "") + ",\n  // notas para Claude: qué hacer en ese lugar (el juego no las usa)\n  notas: [" + lineas(est.notas) + "],\n};\n" +
       (est.lienzo ? "" : "// ?borrador=1: el juego usa lo que está armado en el editor de este navegador, sin descargar nada\n" +
       "try {\n  if (/[?&]borrador=1/.test(location.search)) {\n    const b = JSON.parse(localStorage.getItem(\"" + CLAVE + "\") || \"null\");\n    if (b && b.poner) window.AGREGADOS = b;\n  }\n} catch (e) {}\n")
     );
@@ -3180,7 +3188,7 @@
     if (!confirm(t("ed.limpiar_seguro"))) return;
     recordar();
     // las piezas son la biblioteca de este navegador: limpiar el mapa no las borra
-    est = { poner: [], quitar: [], mover: [], quitarDeco: [], caminos: [], quitarCaminos: [], estiloCaminos: [], rios: [], lagos: [], quitarRios: [], quitarLagos: [], estiloRios: [], estiloLagos: [], notas: [], piezas: est.piezas || {}, texturas: est.texturas || {}, casas: est.casas || {}, zonas: est.zonas || {}, npcs: est.npcs || [], imagenes: est.imagenes || {}, nombre: est.nombre, lienzo: est.lienzo, mapaId: est.mapaId };
+    est = { poner: [], quitar: [], mover: [], quitarDeco: [], caminos: [], quitarCaminos: [], estiloCaminos: [], rios: [], lagos: [], quitarRios: [], quitarLagos: [], estiloRios: [], estiloLagos: [], notas: [], piezas: est.piezas || {}, texturas: est.texturas || {}, casas: est.casas || {}, zonas: est.zonas || {}, eikholt: est.eikholt, npcs: est.npcs || [], imagenes: est.imagenes || {}, nombre: est.nombre, lienzo: est.lienzo, mapaId: est.mapaId };
     guardar();
   };
 

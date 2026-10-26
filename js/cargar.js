@@ -62,12 +62,15 @@
     ["../juego/js/comun/calidad.js", 0],
     ["js/textos/interfaz.js", "js/textos/aventura.js", 1],
     ["js/textos/etapas.js", "js/textos/aventura.js", 1],
+    ["js/textos/eikholt.js", "js/textos/aventura.js", 1],
     ["js/historia/guion.js", "js/mundo/agregados.js"],
     ["js/mundo/caminos.js", "js/mundo/agregados.js"],
     ["js/mundo/eldervald.js", "js/mundo/agregados.js"],
   ];
-  const DESPUES = ["js/motor/interiores.js", "js/motor/regiones.js", "js/motor/zonas.js"];
-  const EDITOR = ["editor", "comandos", "ia", "github", "proyectos", "cuartos", "mundo", "pincel", "historia", "texturas", "zonas", "npcs", "importar", "boceto", "capas", "menu"];
+  // Eikholt (la capital es otro mapa): el plano, sus piezas, lo del editor (ciudad/agregados.js) y la vista del juego
+  const CIUDAD = ["casas", "puestos", "muralla", "roble", "ting", "enseres", "oficios", "porton", "plano", "agregados", "vista"].map((n) => "js/ciudad/" + n + ".js");
+  const DESPUES = ["js/motor/interiores.js", "js/motor/regiones.js", "js/motor/zonas.js"].concat(CIUDAD);
+  const EDITOR = ["editor", "comandos", "ia", "github", "proyectos", "cuartos", "mundo", "pincel", "historia", "texturas", "zonas", "eikholt", "npcs", "importar", "boceto", "capas", "menu"];
   function armar(lista) {
     lista = lista.filter((s) => s !== "js/catalogo.js");
     EXTRA.forEach(([s, antes, despues]) => {
